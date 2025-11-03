@@ -37,7 +37,8 @@ root.render(
       domain={domain}
       clientId={clientId}
       authorizationParams={{
-        redirect_uri: process.env.REACT_APP_AUTH0_REDIRECT_URI,
+        // redirect_uri: process.env.REACT_APP_AUTH0_REDIRECT_URI,
+        redirect_uri: "https://webroicalculatortest.netlify.app/",
       }}
     >
       <App />

@@ -37,9 +37,11 @@ root.render(
       domain={domain}
       clientId={clientId}
       authorizationParams={{
-        // redirect_uri: process.env.REACT_APP_AUTH0_REDIRECT_URI,
-        redirect_uri: "https://webroicalculatortest.netlify.app/",
+        redirect_uri: process.env.REACT_APP_AUTH0_REDIRECT_URI,
+          scope: "openid profile email",
       }}
+       cacheLocation="localstorage"
+        useRefreshTokens={true}
     >
       <App />
     </Auth0Provider>

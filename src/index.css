@@ -2,9 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+
+@layer base {
+  body {
+    @apply font-outfit bg-gray-50 text-gray-800;
+  }
+}
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    font-family: -apple-system, BlinkMacSystemFont, 'Lexend Deca Variable', "Segoe UI", "Roboto",
         "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
         "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -21,6 +27,7 @@ code {
 @layer base {
   :root {
         --background: 0 0% 100%;
+        --active-background:"#1AC47D1A";
         --foreground: 0 0% 3.9%;
         --card: 0 0% 100%;
         --card-foreground: 0 0% 3.9%;

@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -20,13 +20,21 @@ import {
   BarChart3,
   Download,
   AlertCircle,
+  LockKeyholeOpen,
+  Lock,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useCurrency } from "../contexts/CurrencyContext";
 
 const ROIResults = ({ results }) => {
   const { getCurrencySymbol, formatCurrency } = useCurrency();
+  const [unlocked, setUnlocked] = useState(false);
+  const navigate = useNavigate()
+  const handleUpgrade = () => {
+    setUnlocked(true);
+  };
 
   const pdfRef = useRef();
   if (!results) {
@@ -173,12 +181,12 @@ const ROIResults = ({ results }) => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-emerald-600 text-sm font-medium">ROI</p>
-                  <p className="text-3xl font-bold text-emerald-700">
+                  <p className="text-3xl font-bold text-emerald-700 ">
                     {results.roi}%
                   </p>
                   <div
                     style={{ paddingTop: "0px" }}
-                    className={` font-bold ${roiStatus.color} text-white`}
+                    className={` font-bold ${roiStatus.color} text-white `}
                   >
                     {roiStatus?.text}
                   </div>
@@ -195,10 +203,10 @@ const ROIResults = ({ results }) => {
                   <p className="text-blue-600 text-sm font-medium">
                     Payback Period
                   </p>
-                  <p className="text-3xl font-bold text-blue-700">
+                  <p className="text-3xl font-bold text-blue-700 ">
                     {results.paybackPeriod}
                   </p>
-                  <p className="text-blue-600 text-sm">years</p>
+                  <p className="text-blue-600 text-sm ">years</p>
                 </div>
                 <Calendar className="h-8 w-8 text-blue-600" />
               </div>
@@ -212,7 +220,7 @@ const ROIResults = ({ results }) => {
                   <p className="text-purple-600 text-sm font-medium">
                     Total Investment
                   </p>
-                  <p className="text-2xl font-bold text-purple-700">
+                  <p className="text-2xl font-bold text-purple-700 ">
                     {formatCurrency(results.totalInvestment)}
                   </p>
                 </div>
@@ -228,7 +236,7 @@ const ROIResults = ({ results }) => {
                   <p className="text-amber-600 text-sm font-medium">
                     5-Year Profit
                   </p>
-                  <p className="text-2xl font-bold text-amber-700">
+                  <p className="text-2xl font-bold text-amber-700 ">
                     {formatCurrency(results.fiveYearProfit)}
                   </p>
                 </div>
@@ -256,7 +264,10 @@ const ROIResults = ({ results }) => {
                   <span className="text-sm font-medium text-slate-600">
                     Annual Revenue
                   </span>
-                  <span className="font-semibold text-emerald-600">
+                 
+                  <span 
+                 className={unlocked ? "font-semibold text-emerald-600" : "blur-sm"}
+                  >
                     {formatCurrency(results.annualRevenue)}
                   </span>
                 </div>
@@ -268,7 +279,9 @@ const ROIResults = ({ results }) => {
                   <span className="text-sm font-medium text-slate-600">
                     Annual Costs
                   </span>
-                  <span className="font-semibold text-red-600">
+                  <span 
+                      className={unlocked ? "font-semibold text-red-600" : "blur-sm"}
+                    >
                     {formatCurrency(results.annualCosts)}
                   </span>
                 </div>
@@ -283,7 +296,9 @@ const ROIResults = ({ results }) => {
                   <span className="text-sm font-medium text-slate-600">
                     Annual Profit
                   </span>
-                  <span className="font-semibold text-emerald-600">
+                  <span 
+                    className={unlocked ? "font-semibold text-green-600" : "blur-sm"}
+                  >
                     {formatCurrency(results.annualProfit)}
                   </span>
                 </div>
@@ -308,7 +323,10 @@ const ROIResults = ({ results }) => {
             <div className="space-y-4">
               <div className="flex justify-between items-center py-1">
                 <span className="font-medium">Equipment Costs</span>
-                <span className="font-semibold">
+                <span
+                   className={unlocked ? "font-semibold text-orange-600" : "blur-sm"}
+                
+                 >
                   {getCurrencySymbol()}
                   {results.costBreakdown.equipment.toLocaleString()}
                 </span>
@@ -317,7 +335,9 @@ const ROIResults = ({ results }) => {
 
               <div className="flex justify-between items-center py-1">
                 <span className="font-medium">Installation Costs</span>
-                <span className="font-semibold">
+                <span 
+                 className={unlocked ? "font-semibold text-green-600" : "blur-sm"}
+                >
                   {getCurrencySymbol()}
                   {results.costBreakdown.installation.toLocaleString()}
                 </span>
@@ -326,7 +346,9 @@ const ROIResults = ({ results }) => {
 
               <div className="flex justify-between items-center py-1 bg-slate-50 px-4 rounded">
                 <span className="font-semibold">Total Initial Investment</span>
-                <span className="font-bold text-lg">
+                <span 
+                  className={unlocked ? "font-semibold text-gray-800" : "blur-sm"}
+                >
                   {getCurrencySymbol()}
                   {results.totalInvestment.toLocaleString()}
                 </span>
@@ -343,7 +365,7 @@ const ROIResults = ({ results }) => {
               Expected yearly profits with growth assumptions
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          {/* <CardContent>
             <div>
               {results.yearlyProfits.map((year, index) => (
                 <div
@@ -351,15 +373,15 @@ const ROIResults = ({ results }) => {
                   className="grid grid-cols-4 gap-2 py-3 border-b border-slate-100 last:border-b-0"
                 >
                   <div className="font-medium">Year {year.year}</div>
-                  <div className="text-emerald-600">
+                  <div className="text-emerald-600 blur-sm">
                     {getCurrencySymbol()}
                     {year.revenue.toLocaleString()}
                   </div>
-                  <div className="text-red-600">
+                  <div className="text-red-600 blur-sm">
                     {getCurrencySymbol()}
                     {year.costs.toLocaleString()}
                   </div>
-                  <div className="font-semibold text-slate-900">
+                  <div className="font-semibold text-slate-900 blur-sm">
                     {getCurrencySymbol()}
                     {year.profit.toLocaleString()}
                   </div>
@@ -368,23 +390,96 @@ const ROIResults = ({ results }) => {
 
               <div className="grid grid-cols-4 gap-4 py-4 bg-slate-50 rounded font-semibold">
                 <div>Total</div>
-                <div className="text-emerald-600">
+                <div className="text-emerald-600 blur-sm">
                   {getCurrencySymbol()}
                   {results.yearlyProfits
                     .reduce((sum, year) => sum + year.revenue, 0)
                     .toLocaleString()}
                 </div>
-                <div className="text-red-600">
+                <div className="text-red-600 blur-sm">
                   {getCurrencySymbol()}
                   {results.yearlyProfits
                     .reduce((sum, year) => sum + year.costs, 0)
                     .toLocaleString()}
                 </div>
-                <div className="text-slate-900">
+                <div className="text-slate-900 blur-sm">
                   {getCurrencySymbol()}
                   {results.fiveYearProfit.toLocaleString()}
                 </div>
               </div>
+            </div>
+          </CardContent> */}
+          <CardContent>
+            <div className="relative">
+              {/* TABLE CONTENT */}
+              <div
+                className={`${
+                  !unlocked ? "blur-sm pointer-events-none select-none" : ""
+                }`}
+              >
+                <div>
+                  {results.yearlyProfits.map((year, index) => (
+                    <div
+                      key={year.year}
+                      className="grid grid-cols-4 gap-2 py-3 border-b border-slate-100 last:border-b-0"
+                    >
+                      <div className="font-medium">Year {year.year}</div>
+                      <div className="text-emerald-600">
+                        {getCurrencySymbol()}
+                          {formatCurrency(year.revenue)}
+                        {/* {year.revenue.toLocaleString()} */}
+                      </div>
+                      <div className="text-red-600">
+                        {getCurrencySymbol()}
+                          {formatCurrency(year.costs)}
+
+                        {/* {year.costs.toLocaleString()} */}
+                      </div>
+                      <div className="font-semibold text-slate-900">
+                        {getCurrencySymbol()}
+                                                  {formatCurrency(year.profit)}
+
+                        {/* {year.profit.toLocaleString()} */}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="grid grid-cols-4 gap-4 py-4 bg-slate-50 rounded font-semibold">
+                    <div>Total</div>
+                    <div className="text-emerald-600">
+                      {getCurrencySymbol()}
+                      {results.yearlyProfits
+                        .reduce((sum, year) => sum + year.revenue, 0)
+                        .toLocaleString()}
+                    </div>
+                    <div className="text-red-600">
+                      {getCurrencySymbol()}
+                      {results.yearlyProfits
+                        .reduce((sum, year) => sum + year.costs, 0)
+                        .toLocaleString()}
+                    </div>
+                    <div className="text-slate-900">
+                      {getCurrencySymbol()}
+                      {results.fiveYearProfit.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* OVERLAY BUTTON */}
+              {!unlocked && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+                  <button
+                    onClick={() => setUnlocked(true)}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow"
+                  >
+                    <span className="flex justify-center items-center">
+                      <LockKeyholeOpen />
+                    </span>
+                    Unlock Now
+                  </button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -397,7 +492,7 @@ const ROIResults = ({ results }) => {
               Key Insights & Recommendations
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          {/* <CardContent className="space-y-4 blur-sm">
             <div className="space-y-3">
               {results.roi >= 15 ? (
                 <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-lg">
@@ -449,6 +544,85 @@ const ROIResults = ({ results }) => {
                 </div>
               ) : null}
             </div>
+          </CardContent> */}
+          <CardContent className="relative">
+            {/* CONTENT (blurred when locked) */}
+            <div
+              className={`${
+                !unlocked ? "blur-sm pointer-events-none select-none" : ""
+              } space-y-4`}
+            >
+              <div className="space-y-3">
+                {results.roi >= 15 ? (
+                  <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-lg">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium text-emerald-800">
+                        Strong ROI Potential
+                      </p>
+                      <p className="text-emerald-700 text-sm">
+                        Your projected ROI of {results.roi}% indicates excellent
+                        investment potential.
+                      </p>
+                    </div>
+                  </div>
+                ) : results.roi >= 10 ? (
+                  <div className="flex items-start gap-3 p-4 bg-yellow-50 rounded-lg">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium text-yellow-800">
+                        Moderate ROI
+                      </p>
+                      <p className="text-yellow-700 text-sm">
+                        Consider optimizing costs or increasing pricing to
+                        improve ROI.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
+                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium text-red-800">
+                        Low ROI Warning
+                      </p>
+                      <p className="text-red-700 text-sm">
+                        Current projections show low returns. Review costs and
+                        usage assumptions.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {results.paybackPeriod <= 3 && (
+                  <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="font-medium text-blue-800">Quick Payback</p>
+                      <p className="text-blue-700 text-sm">
+                        Your {results.paybackPeriod}-year payback period is
+                        excellent for this industry.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* OVERLAY BUTTON */}
+            {!unlocked && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+                <button
+                  onClick={() => setUnlocked(true)}
+                  className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow"
+                >
+                  <span className="flex justify-center items-center">
+                    <LockKeyholeOpen />
+                  </span>
+                  Unlock Now
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -456,7 +630,7 @@ const ROIResults = ({ results }) => {
       {/* Export Options */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          {/* <div className="flex flex-col sm:flex-row gap-4">
             <Button
               className="flex-1"
               variant="outline"
@@ -472,6 +646,33 @@ const ROIResults = ({ results }) => {
             >
               <Download className="h-4 w-4 mr-2" />
               Export Excel Data
+            </Button>
+          </div> */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button
+              className={`flex-1 flex items-center ${
+                !unlocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+              }`}
+              variant="outline"
+              onClick={unlocked ? handleDownloadPdf : undefined}
+              disabled={!unlocked}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export PDF Report
+              {!unlocked && <Lock className="h-4 w-4 ml-2 text-yellow-500" />}
+            </Button>
+
+            <Button
+              className={`flex-1 flex items-center ${
+                !unlocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+              }`}
+              variant="outline"
+              onClick={unlocked ? handleExportExcel : undefined}
+              disabled={!unlocked}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export Excel Data
+              {!unlocked && <Lock className="h-4 w-4 ml-2 text-yellow-500" />}
             </Button>
           </div>
         </CardContent>

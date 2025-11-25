@@ -1,11 +1,18 @@
+import { useAuth0 } from "@auth0/auth0-react";
+import { ArrowLeft } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const InvestmentReport = () => {
+  const { user } = useAuth0();
+  const CurrentUserId = user?.sub;
   const [data, setData] = useState([]);
-
+  const navigate = useNavigate();
   useEffect(() => {
     // 👇 Replace with your actual API endpoint
-    fetch(`${process.env.REACT_APP_BASE_URL}/api/v1/investments/getallinvestments`)
+    fetch(
+      `${process.env.REACT_APP_BASE_URL}/api/v1/investments/getinvestments?user_id=${CurrentUserId}`
+    )
       .then((res) => res.json())
       .then((result) => {
         setData(result);
@@ -13,12 +20,32 @@ const InvestmentReport = () => {
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
-  console.log("Investment Data",data);
-  
+  console.log("Investment Data", data);
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2 className="text-2xl font-sans font-bold flex items-center justify-center">Investment Summary</h2>
+      <div className="flex justify-between w-[58%]">
+        {/* Back button */}
+        <span className="flex items-center ">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center justify-center w-10 h-10 rounded-full 
+             bg-emerald-100 text-emerald-700 
+             hover:bg-emerald-600 hover:text-white 
+             shadow-sm hover:shadow-md transition-all duration-300"
+          >
+            <ArrowLeft
+              size={20}
+              className="transition-transform duration-200 hover:-translate-x-1"
+            />
+          </button>
+          <span className="ml-2 font-semibold">Back</span>
+        </span>
+
+        <h2 className="text-2xl font-sans font-bold flex items-center justify-center">
+          Your Saved Project
+        </h2>
+      </div>
       <table
         style={{
           borderCollapse: "collapse",
@@ -52,8 +79,12 @@ const InvestmentReport = () => {
                 <td style={tdStyle}>{item.user_id}</td>
                 <td style={tdStyle}>{item.roi}</td>
                 <td style={tdStyle}>{item.payback_period_years}</td>
-                <td style={tdStyle}>{item.total_investment.toLocaleString()}</td>
-                <td style={tdStyle}>{item.five_year_profit.toLocaleString()}</td>
+                <td style={tdStyle}>
+                  {item.total_investment.toLocaleString()}
+                </td>
+                <td style={tdStyle}>
+                  {item.five_year_profit.toLocaleString()}
+                </td>
                 <td style={tdStyle}>
                   {item.annual_financial_summary.revenue.toLocaleString()}
                 </td>

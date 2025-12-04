@@ -1,4 +1,4 @@
-import React from "react";
+import React,{useState} from "react";
 import {
   Card,
   CardContent,
@@ -11,6 +11,7 @@ import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
 import { Plug, Wrench, Zap, Building } from "lucide-react";
 import { useCurrency } from "../contexts/CurrencyContext";
+import { useChargerType } from "@/contexts/ChargerTypeContext";
 
 const CostInputs = ({ costData, setCostData }) => {
   const { getCurrencySymbol, formatCurrencyInput, convertInputToUSD } =
@@ -25,23 +26,41 @@ const CostInputs = ({ costData, setCostData }) => {
       },
     }));
   };
+const { chargerType, setChargerType } = useChargerType();
 
-  const updateEquipmentData = (type, field, value) => {
-    const usdValue =
-      field === "quantity"
-        ? parseFloat(value) || 0
-        : convertInputToUSD(parseFloat(value) || 0);
-    setCostData((prev) => ({
-      ...prev,
-      equipment: {
-        ...prev.equipment,
-        [type]: {
-          ...prev.equipment[type],
-          [field]: usdValue,
-        },
+  // const updateEquipmentData = (type, field, value) => {
+  //   const usdValue =
+  //     field === "quantity"
+  //       ? parseFloat(value) || 0
+  //       : convertInputToUSD(parseFloat(value) || 0);
+  //   setCostData((prev) => ({
+  //     ...prev,
+  //     equipment: {
+  //       ...prev.equipment,
+  //       [type]: {
+  //         ...prev.equipment[type],
+  //         [field]: usdValue,
+  //       },
+  //     },
+  //   }));
+  // };
+const updateEquipmentData = (type, field, value) => {
+  const usdValue =
+    field === "quantity"
+      ? parseFloat(value) || 0
+      : convertInputToUSD(parseFloat(value) || 0);
+  setCostData((prev) => ({
+    ...prev,
+    equipment: {
+      ...prev.equipment,
+      [type]: {
+        ...prev.equipment[type],
+        [field]: usdValue,
       },
-    }));
-  };
+    },
+  }));
+};
+
 
   return (
     <div className="space-y-6">
@@ -58,103 +77,134 @@ const CostInputs = ({ costData, setCostData }) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold text-slate-700">
-                Level 2 Chargers (AC)
-              </h4>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="level2-qty">Quantity</Label>
-                  <Input
-                    id="level2-qty"
-                    type="number"
-                    placeholder="0"
-                    value={costData.equipment.level2Chargers.quantity || ""}
-                    onChange={(e) =>
-                      updateEquipmentData(
-                        "level2Chargers",
-                        "quantity",
-                        e.target.value
-                      )
-                    }
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="level2-cost">
-                    Unit Cost ({getCurrencySymbol()})
-                  </Label>
-                  <Input
-                    id="level2-cost"
-                    type="number"
-                    placeholder={formatCurrencyInput(2500).toFixed(0)}
-                    value={formatCurrencyInput(
-                      costData.equipment.level2Chargers.unitCost || 0
-                    ).toFixed(0)}
-                    onChange={(e) =>
-                      updateEquipmentData(
-                        "level2Chargers",
-                        "unitCost",
-                        e.target.value
-                      )
-                    }
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-            </div>
+         
+<div className="border-b flex gap-6 text-sm font-medium mb-6">
+  <button
+    className={`pb-2 ${
+      chargerType === "level2"
+        ? "border-b-2 border-blue-600 text-blue-600"
+        : "text-slate-500"
+    }`}
+    onClick={() => setChargerType("level2")}
+  >
+    Level 2 (AC)
+  </button>
 
-            <div className="space-y-4">
-              <h4 className="font-semibold text-slate-700">
-                Level 3 Chargers (DC Fast)
-              </h4>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="level3-qty">
-                    Quantity
-                    <span className="text-red-600 font-bold">*</span>
-                  </Label>
-                  <Input
-                    id="level3-qty"
-                    type="number"
-                    placeholder="0"
-                    value={costData.equipment.level3Chargers.quantity || ""}
-                    onChange={(e) =>
-                      updateEquipmentData(
-                        "level3Chargers",
-                        "quantity",
-                        e.target.value
-                      )
-                    }
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="level3-cost">
-                    Unit Cost ({getCurrencySymbol()}){" "}
-                    <span className="text-red-600 font-bold">*</span>
-                  </Label>
-                  <Input
-                    id="level3-cost"
-                    type="number"
-                    placeholder={formatCurrencyInput(45000).toFixed(0)}
-                    value={formatCurrencyInput(
-                      costData.equipment.level3Chargers.unitCost || 0
-                    ).toFixed(0)}
-                    onChange={(e) =>
-                      updateEquipmentData(
-                        "level3Chargers",
-                        "unitCost",
-                        e.target.value
-                      )
-                    }
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+  <button
+    className={`pb-2 ${
+      chargerType === "level3"
+        ? "border-b-2 border-blue-600 text-blue-600"
+        : "text-slate-500"
+    }`}
+    onClick={() => setChargerType("level3")}
+  >
+    Level 3 (DC Fast)
+  </button>
+
+  <button
+    className={`pb-2 ${
+      chargerType === "both"
+        ? "border-b-2 border-blue-600 text-blue-600"
+        : "text-slate-500"
+    }`}
+    onClick={() => setChargerType("both")}
+  >
+    Both
+  </button>
+</div>
+<div className="grid md:grid-cols-2 gap-6">
+
+  {/* LEVEL 2 SECTION */}
+  {(chargerType === "level2" || chargerType === "both") && (
+    <div className="space-y-4">
+      <h4 className="font-semibold text-slate-700">
+        Level 2 Chargers (AC)
+      </h4>
+
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="level2-qty">Quantity  <span className="text-red-600 font-bold">*</span></Label>
+          <Input
+            id="level2-qty"
+          type="text"
+            placeholder="0"
+            value={costData.equipment.level2Chargers.quantity || ""}
+            onChange={(e) =>
+              updateEquipmentData("level2Chargers", "quantity", e.target.value)
+            }
+            className="mt-1"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="level2-cost">
+            Unit Cost ({getCurrencySymbol()})  <span className="text-red-600 font-bold">*</span>
+          </Label>
+          <Input
+            id="level2-cost"
+            type="text"
+            placeholder={formatCurrencyInput(2500).toFixed(0)}
+            value={formatCurrencyInput(
+              costData.equipment.level2Chargers.unitCost || 0
+            ).toFixed(0)}
+            onChange={(e) =>
+              updateEquipmentData("level2Chargers", "unitCost", e.target.value)
+            }
+            className="mt-1"
+          />
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* LEVEL 3 SECTION */}
+  {(chargerType === "level3" || chargerType === "both") && (
+    <div className="space-y-4">
+      <h4 className="font-semibold text-slate-700">
+        Level 3 Chargers (DC Fast)
+      </h4>
+
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="level3-qty">
+            Quantity <span className="text-red-600 font-bold">*</span>
+          </Label>
+          <Input
+            id="level3-qty"
+            type="text"
+            placeholder="0"
+            value={costData.equipment.level3Chargers.quantity || ""}
+            onChange={(e) =>
+              updateEquipmentData("level3Chargers", "quantity", e.target.value)
+            }
+            className="mt-1"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="level3-cost">
+            Unit Cost ({getCurrencySymbol()})
+            <span className="text-red-600 font-bold">*</span>
+          </Label>
+          <Input
+            id="level3-cost"
+            type="text"
+            placeholder={formatCurrencyInput(45000).toFixed(0)}
+            value={formatCurrencyInput(
+              costData.equipment.level3Chargers.unitCost || 0
+            ).toFixed(0)}
+            onChange={(e) =>
+              updateEquipmentData("level3Chargers", "unitCost", e.target.value)
+            }
+            className="mt-1"
+          />
+        </div>
+      </div>
+    </div>
+  )}
+
+</div>
+
 
           <Separator />
 
@@ -165,7 +215,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="transformer"
-                type="number"
+                type="text"
                 placeholder={formatCurrencyInput(25000).toFixed(0)}
                 value={formatCurrencyInput(
                   costData.equipment.transformer || 0
@@ -182,7 +232,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="electrical-infra"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.equipment.electricalInfrastructure || ""}
                 onChange={(e) =>
@@ -201,7 +251,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="networking"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.equipment.networkingSoftware || ""}
                 onChange={(e) =>
@@ -237,7 +287,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="site-prep"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.installation.sitePreperation || ""}
                 onChange={(e) =>
@@ -256,7 +306,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="electrical-install"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.installation.electricalInstallation || ""}
                 onChange={(e) =>
@@ -275,7 +325,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="permits"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.installation.permits || ""}
                 onChange={(e) =>
@@ -288,7 +338,7 @@ const CostInputs = ({ costData, setCostData }) => {
               <Label htmlFor="labor">Labor Costs ({getCurrencySymbol()})</Label>
               <Input
                 id="labor"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.installation.laborCosts || ""}
                 onChange={(e) =>
@@ -321,7 +371,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="electricity-rate"
-                type="number"
+                type="text"
                 step="0.01"
                 placeholder="0"
                 value={costData.operating.electricityCostPerKwh || ""}
@@ -341,7 +391,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="maintenance"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.operating.maintenance || ""}
                 onChange={(e) =>
@@ -356,7 +406,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="network-fees"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.operating.networkFees || ""}
                 onChange={(e) =>
@@ -371,7 +421,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="insurance"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.operating.insurance || ""}
                 onChange={(e) =>
@@ -386,7 +436,7 @@ const CostInputs = ({ costData, setCostData }) => {
               </Label>
               <Input
                 id="land-lease"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={costData.operating.landLease || ""}
                 onChange={(e) =>

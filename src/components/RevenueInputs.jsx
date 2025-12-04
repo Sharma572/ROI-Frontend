@@ -4,11 +4,15 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { DollarSign, Users, TrendingUp, Clock } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Clock, TrendingUpIcon } from 'lucide-react';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useChargerType } from '@/contexts/ChargerTypeContext';
 
 const RevenueInputs = ({ revenueData, setRevenueData }) => {
   const { getCurrencySymbol, formatCurrencyInput, convertInputToUSD } = useCurrency();
+ const { chargerType } = useChargerType();
+console.log("Charger Type Selected on Cost",chargerType);
+
   const updatePricing = (field, value) => {
     const usdValue = field === 'membershipFee' ? convertInputToUSD(parseFloat(value) || 0) : parseFloat(value) || 0;
     setRevenueData(prev => ({
@@ -19,81 +23,81 @@ const RevenueInputs = ({ revenueData, setRevenueData }) => {
       }
     }));
   };
-const updateUsage = (field, value) => {
-  const num = value === "" ? null : parseFloat(value);
+// const updateUsage = (field, value) => {
+//   const num = value === "" ? null : parseFloat(value);
 
-  setRevenueData(prev => {
-    const usage = { ...prev.usage };
+//   setRevenueData(prev => {
+//     const usage = { ...prev.usage };
 
-    // Save cleaned value
-    usage[field] = num;
+//     // Save cleaned value
+//     usage[field] = num;
 
-    // If input is empty → reset related fields
-    if (num === null) {
-      if (field === "dailySessionsLevel3") {
-        usage.monthlySessionsLevel3 = null;
-        usage.monthlyEnergyLevel3 = null;
-      }
+//     // If input is empty → reset related fields
+//     if (num === null) {
+//       if (field === "dailySessionsLevel3") {
+//         usage.monthlySessionsLevel3 = null;
+//         usage.monthlyEnergyLevel3 = null;
+//       }
 
-      if (field === "avgEnergyLevel3") {
-        usage.monthlyEnergyLevel3 = null;
-      }
+//       if (field === "avgEnergyLevel3") {
+//         usage.monthlyEnergyLevel3 = null;
+//       }
 
-      if (field === "monthlyEnergyLevel3") {
-        usage.dailySessionsLevel3 = null;
-        usage.monthlySessionsLevel3 = null;
-      }
+//       if (field === "monthlyEnergyLevel3") {
+//         usage.dailySessionsLevel3 = null;
+//         usage.monthlySessionsLevel3 = null;
+//       }
 
-      return { ...prev, usage };
-    }
+//       return { ...prev, usage };
+//     }
 
-    // ---------- AUTO SYNC START ---------- //
+//     // ---------- AUTO SYNC START ---------- //
 
-    // LEVEL 3 SESSIONS ↔ MONTHLY
-    if (field === "dailySessionsLevel3") {
-      usage.monthlySessionsLevel3 = Math.round(num * 30);
-    }
-    if (field === "monthlySessionsLevel3") {
-      usage.dailySessionsLevel3 = Number((num / 30).toFixed(2));
-    }
+//     // LEVEL 3 SESSIONS ↔ MONTHLY
+//     if (field === "dailySessionsLevel3") {
+//       usage.monthlySessionsLevel3 = Math.round(num * 30);
+//     }
+//     if (field === "monthlySessionsLevel3") {
+//       usage.dailySessionsLevel3 = Number((num / 30).toFixed(2));
+//     }
 
-    // MONTHLY ENERGY → SESSIONS
-    if (field === "monthlyEnergyLevel3") {
-      const avg = usage.avgEnergyLevel3 || 0;
+//     // MONTHLY ENERGY → SESSIONS
+//     if (field === "monthlyEnergyLevel3") {
+//       const avg = usage.avgEnergyLevel3 || 0;
 
-      if (avg > 0) {
-        const dailyEnergy = num / 30;
-        const dailySessions = dailyEnergy / avg;
+//       if (avg > 0) {
+//         const dailyEnergy = num / 30;
+//         const dailySessions = dailyEnergy / avg;
 
-        usage.dailySessionsLevel3 = Number(dailySessions.toFixed(2));
-        usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
-      }
-    }
+//         usage.dailySessionsLevel3 = Number(dailySessions.toFixed(2));
+//         usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
+//       }
+//     }
 
-    // DAILY SESSIONS + AVG ENERGY → MONTHLY ENERGY
-    if (field === "dailySessionsLevel3" || field === "avgEnergyLevel3") {
-      const daily = usage.dailySessionsLevel3 || 0;
-      const avg = usage.avgEnergyLevel3 || 0;
+//     // DAILY SESSIONS + AVG ENERGY → MONTHLY ENERGY
+//     if (field === "dailySessionsLevel3" || field === "avgEnergyLevel3") {
+//       const daily = usage.dailySessionsLevel3 || 0;
+//       const avg = usage.avgEnergyLevel3 || 0;
 
-      if (daily > 0 && avg > 0) {
-        usage.monthlyEnergyLevel3 = Math.round(daily * avg * 30);
-      }
-    }
+//       if (daily > 0 && avg > 0) {
+//         usage.monthlyEnergyLevel3 = Math.round(daily * avg * 30);
+//       }
+//     }
 
-    // AVG ENERGY CHANGE → RECALC sessions
-    if (field === "avgEnergyLevel3" && usage.monthlyEnergyLevel3 > 0) {
-      const dailyEnergy = usage.monthlyEnergyLevel3 / 30;
-      const dailySessions = dailyEnergy / num;
+//     // AVG ENERGY CHANGE → RECALC sessions
+//     if (field === "avgEnergyLevel3" && usage.monthlyEnergyLevel3 > 0) {
+//       const dailyEnergy = usage.monthlyEnergyLevel3 / 30;
+//       const dailySessions = dailyEnergy / num;
 
-      usage.dailySessionsLevel3 = Number(dailySessions.toFixed(2));
-      usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
-    }
+//       usage.dailySessionsLevel3 = Number(dailySessions.toFixed(2));
+//       usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
+//     }
 
-    // ---------- AUTO SYNC END ---------- //
+//     // ---------- AUTO SYNC END ---------- //
 
-    return { ...prev, usage };
-  });
-};
+//     return { ...prev, usage };
+//   });
+// };
 
 // const updateUsage = (field, value) => {
 //   const num = parseFloat(value) ;
@@ -203,6 +207,138 @@ const updateUsage = (field, value) => {
 //   });
 // };
 
+const updateUsage = (field, value) => {
+  const num = parseFloat(value);
+
+  setRevenueData(prev => {
+    const usage = { ...prev.usage, [field]: num }; // <-- MUST COME FIRST
+
+    // -------------------------------
+    // AUTO SYNC: SESSIONS ↔ MONTHLY
+    // -------------------------------
+
+    // ---- LEVEL 2 ----
+    if (field === "dailySessionsLevel2") {
+      usage.monthlySessionsLevel2 = Math.round(num * 30);
+    }
+    if (field === "monthlySessionsLevel2") {
+      usage.dailySessionsLevel2 = Number((num / 30).toFixed(2));
+    }
+
+    // ---- LEVEL 3 ----
+    if (field === "dailySessionsLevel3") {
+      usage.monthlySessionsLevel3 = Math.round(num * 30);
+    }
+    if (field === "monthlySessionsLevel3") {
+      usage.dailySessionsLevel3 = Number((num / 30).toFixed(2));
+    }
+
+    // ------------------------------------------
+    // MONTHLY ENERGY → SESSIONS (if AVG exists)
+    // ------------------------------------------
+
+    // LEVEL 2
+    if (field === "monthlyEnergyLevel2") {
+      const avg = usage.avgEnergyLevel2 || 0;
+
+      if (avg > 0) {
+        const dailyEnergy = num / 30;
+        const dailySessions = dailyEnergy / avg;
+
+        usage.dailySessionsLevel2 = Number(dailySessions.toFixed(2));
+        usage.monthlySessionsLevel2 = Math.round(dailySessions * 30);
+      }
+    }
+
+    // LEVEL 3
+    if (field === "monthlyEnergyLevel3") {
+      const avg = usage.avgEnergyLevel3 || 0;
+
+      if (avg > 0) {
+        const dailyEnergy = num / 30;
+        const dailySessions = dailyEnergy / avg;
+
+        usage.dailySessionsLevel3 = Number(dailySessions.toFixed(2));
+        usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
+      }
+    }
+
+    // ------------------------------------------
+    // DAILY SESSIONS + AVG ENERGY → MONTHLY ENERGY
+    // ------------------------------------------
+
+    // LEVEL 2
+    if (field === "dailySessionsLevel2" || field === "avgEnergyLevel2") {
+      const daily = usage.dailySessionsLevel2 || 0;
+      const avg = usage.avgEnergyLevel2 || 0;
+
+      if (daily > 0 && avg > 0) {
+        const dailyEnergy = daily * avg;
+        usage.monthlyEnergyLevel2 = Math.round(dailyEnergy * 30);
+      }
+    }
+
+    // LEVEL 3
+    if (field === "dailySessionsLevel3" || field === "avgEnergyLevel3") {
+      const daily = usage.dailySessionsLevel3 || 0;
+      const avg = usage.avgEnergyLevel3 || 0;
+
+      if (daily > 0 && avg > 0) {
+        const dailyEnergy = daily * avg;
+        usage.monthlyEnergyLevel3 = Math.round(dailyEnergy * 30);
+      }
+    }
+
+    // ------------------------------------------
+    // AVG ENERGY CHANGE → RECALC SESSIONS
+    // ------------------------------------------
+
+    // LEVEL 2
+    if (field === "avgEnergyLevel2" && usage.monthlyEnergyLevel2 > 0) {
+      const dailyEnergy = usage.monthlyEnergyLevel2 / 30;
+      const dailySessions = dailyEnergy / num;
+
+      usage.dailySessionsLevel2 = Number(dailySessions.toFixed(2));
+      usage.monthlySessionsLevel2 = Math.round(dailySessions * 30);
+    }
+
+    // LEVEL 3
+    if (field === "avgEnergyLevel3" && usage.monthlyEnergyLevel3 > 0) {
+      const dailyEnergy = usage.monthlyEnergyLevel3 / 30;
+      const dailySessions = dailyEnergy / num;
+
+      usage.dailySessionsLevel3 = Number(dailySessions.toFixed(2));
+      usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
+    }
+
+    // ------------------------------------------
+    // ⭐ AUTO-CALCULATE AVG ENERGY (NEW CODE)
+    // ------------------------------------------
+
+    // LEVEL 2
+    if (
+      usage.monthlyEnergyLevel2 > 0 &&
+      usage.monthlySessionsLevel2 > 0
+    ) {
+      usage.avgEnergyLevel2 = Number(
+        (usage.monthlyEnergyLevel2 / usage.monthlySessionsLevel2).toFixed(2)
+      );
+    }
+
+    // LEVEL 3
+    if (
+      usage.monthlyEnergyLevel3 > 0 &&
+      usage.monthlySessionsLevel3 > 0
+    ) {
+      usage.avgEnergyLevel3 = Number(
+        (usage.monthlyEnergyLevel3 / usage.monthlySessionsLevel3).toFixed(2)
+      );
+    }
+
+    return { ...prev, usage };
+  });
+};
+
 
 
   const updateTimeline = (field, value) => {
@@ -229,46 +365,67 @@ const updateUsage = (field, value) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+        
           <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="level2-rate">Level 2 Rate ({getCurrencySymbol()}/kWh)</Label>
-              <Input
-                id="level2-rate"
-                type="number"
-                step="0.01"
-                placeholder="0.25"
-                value={revenueData.pricing.level2Rate || ''}
-                onChange={(e) => updatePricing('level2Rate', e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-sm text-slate-500 mt-1">Typical range: {getCurrencySymbol()}0.20 - {getCurrencySymbol()}0.35</p>
-            </div>
-            <div>
-              <Label htmlFor="level3-rate">Level 3 Rate ({getCurrencySymbol()}/kWh)</Label>
-              <Input
-                id="level3-rate"
-                type="number"
-                step="0.01"
-                placeholder="0"
-                value={revenueData.pricing.level3Rate || ''}
-                onChange={(e) => updatePricing('level3Rate', e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-sm text-slate-500 mt-1">Typical range: {getCurrencySymbol()}0.35 - {getCurrencySymbol()}0.60</p>
-            </div>
-            <div>
-              <Label htmlFor="membership-fee">Monthly Membership Fee ({getCurrencySymbol()})</Label>
-              <Input
-                id="membership-fee"
-                type="number"
-                placeholder="0"
-                value={formatCurrencyInput(revenueData.pricing.membershipFee || 0).toFixed(0)}
-                onChange={(e) => updatePricing('membershipFee', e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-sm text-slate-500 mt-1">Optional subscription model</p>
-            </div>
-          </div>
+
+  {/* LEVEL 2 RATE */}
+  {(chargerType === "level2" || chargerType === "both") && (
+    <div>
+      <Label htmlFor="level2-rate">Level 2 (AC) Rate ({getCurrencySymbol()}/kWh)</Label>
+      <Input
+        id="level2-rate"
+        type="text"
+       
+        placeholder="0.25"
+        value={revenueData.pricing.level2Rate || ''}
+        onChange={(e) => updatePricing('level2Rate', e.target.value)}
+        className="mt-1"
+      />
+      <p className="text-sm text-slate-500 mt-1">
+        Typical range: {getCurrencySymbol()}0.20 - {getCurrencySymbol()}0.35
+      </p>
+    </div>
+  )}
+
+  {/* LEVEL 3 RATE */}
+  {(chargerType === "level3" || chargerType === "both") && (
+    <div>
+      <Label htmlFor="level3-rate">Level 3 (DC) Rate ({getCurrencySymbol()}/kWh)</Label>
+      <Input
+        id="level3-rate"
+        type="text"
+
+        placeholder="0"
+        value={revenueData.pricing.level3Rate || ''}
+        onChange={(e) => updatePricing('level3Rate', e.target.value)}
+        className="mt-1"
+      />
+      <p className="text-sm text-slate-500 mt-1">
+        Typical range: {getCurrencySymbol()}0.35 - {getCurrencySymbol()}0.60
+      </p>
+    </div>
+  )}
+
+  {/* MEMBERSHIP – always visible */}
+  <div>
+    <Label htmlFor="membership-fee">
+      Monthly Membership Fee ({getCurrencySymbol()})
+    </Label>
+    <Input
+      id="membership-fee"
+      type="text"
+      placeholder="0"
+      value={formatCurrencyInput(revenueData.pricing.membershipFee || 0).toFixed(0)}
+      onChange={(e) => updatePricing('membershipFee', e.target.value)}
+      className="mt-1"
+    />
+    <p className="text-sm text-slate-500 mt-1">
+      Optional subscription model
+    </p>
+  </div>
+
+</div>
+
         </CardContent>
       </Card>
 
@@ -284,120 +441,171 @@ const updateUsage = (field, value) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-           {/* DAILY SESSIONS */}
-<div>
-  <Label>Daily Level 2 Sessions</Label>
-  <Input
-    type="number"
-    placeholder="Enter Your Daily Level 2 Session"
-     value={revenueData.usage.dailySessionsLevel2 ?? ""}
-    onChange={(e) => updateUsage("dailySessionsLevel2", e.target.value)}
-  />
-</div>
+        <div className="grid grid-cols-1 gap-4">
+{/* LEVEL 2 SECTION */}
+{(chargerType === "level2" || chargerType === "both") && (
+  <div className="space-y-2 border-[1px] p-4 rounded-lg border-gray-300 hover:border-gray-400 transition-colors">
 
-<div>
-  <Label>Daily Level 3 Sessions</Label>
-  <Input
-    type="number"
-    placeholder="Enter Your Daily Level 3 Session"
-   value={revenueData.usage.dailySessionsLevel3 ?? ""}
-    onChange={(e) => updateUsage("dailySessionsLevel3", e.target.value)}
-  />
-</div>
+    {/* Section Title */}
+    <h3 className="font-semibold text-blue-700 text-lg border-b pb-1">
+      Level 2 (AC) Usage
+    </h3>
 
+    {/* Daily + Monthly Sessions */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <Label>Daily L2 Sessions</Label>
+        <Input
+          type="text"
+          placeholder="Enter daily L2 sessions"
+          value={revenueData.usage.dailySessionsLevel2 ?? ""}
+          onChange={(e) =>
+            updateUsage("dailySessionsLevel2", e.target.value)
+          }
+        />
+      </div>
 
-{/* AVG ENERGY (SEPARATE FOR LEVEL 2 & 3) */}
-<div>
-  <Label>Avg Energy per Level 2 Session (kWh)</Label>
-  <Input
-    type="number"
-    placeholder="Enter Your Avg Energy per Level 2 Session (kWh)"
-    value={revenueData.usage.avgEnergyLevel2}
-    onChange={(e) => updateUsage("avgEnergyLevel2", e.target.value)}
-  />
-</div>
+      <div>
+        <Label>Monthly L2 Sessions</Label>
+        <Input
+          type="text"
+          placeholder="Enter monthly L2 sessions"
+          value={revenueData.usage.monthlySessionsLevel2 ?? ""}
+          onChange={(e) =>
+            updateUsage("monthlySessionsLevel2", e.target.value)
+          }
+        />
+      </div>
+    </div>
 
-<div>
-  <Label>Avg Energy per Level 3 Session (kWh)</Label>
-  <Input
-    type="number"
-    value={revenueData.usage.avgEnergyLevel3}
-     placeholder="Enter Your Avg Energy per Level 3 Session (kWh)"
-    onChange={(e) => updateUsage("avgEnergyLevel3", e.target.value)}
-  />
-</div>
+    {/* Monthly Energy (FULL WIDTH) */}
+    <div>
+      <Label>Monthly Energy Consumed (kWh) - Level 2</Label>
+      <Input
+        type="text"
+        placeholder="Total monthly L2 energy"
+        value={revenueData.usage.monthlyEnergyLevel2 ?? ""}
+        onChange={(e) =>
+          updateUsage("monthlyEnergyLevel2", e.target.value)
+        }
+      />
+    </div>
+
+    {/* Avg Energy (FULL WIDTH) */}
+    <div>
+      <Label>Avg Energy per L2 Session (kWh)</Label>
+      <Input
+        type="text"
+        placeholder="Enter average energy"
+        value={revenueData.usage.avgEnergyLevel2 ?? ""}
+        onChange={(e) =>
+          updateUsage("avgEnergyLevel2", e.target.value)
+        }
+      />
+    </div>
+  </div>
+)}
+
+{/* LEVEL 3 SECTION */}
+{(chargerType === "level3" || chargerType === "both") && (
+  <div className="space-y-2 mt-1 border-[1px] p-4 rounded-lg border-gray-300 hover:border-gray-400 transition-colors">
+
+    {/* Section Title */}
+    <h3 className="font-semibold text-orange-700 text-lg border-b pb-1">
+      Level 3 (DC Fast) Usage
+    </h3>
+
+    {/* Daily + Monthly Sessions */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <Label>Daily L3 Sessions</Label>
+        <Input
+          type="text"
+          placeholder="Enter daily L3 sessions"
+          value={revenueData.usage.dailySessionsLevel3 ?? ""}
+          onChange={(e) =>
+            updateUsage("dailySessionsLevel3", e.target.value)
+          }
+        />
+      </div>
+
+      <div>
+        <Label>Monthly L3 Sessions</Label>
+        <Input
+          type="text"
+          placeholder="Enter monthly L3 sessions"
+          value={revenueData.usage.monthlySessionsLevel3 ?? ""}
+          onChange={(e) =>
+            updateUsage("monthlySessionsLevel3", e.target.value)
+          }
+        />
+      </div>
+    </div>
+
+    {/* Monthly Energy (FULL WIDTH) */}
+    <div>
+      <Label>Monthly Energy Consumed (kWh) - Level 3</Label>
+      <Input
+        type="text"
+        placeholder="Total monthly L3 energy"
+        value={revenueData.usage.monthlyEnergyLevel3 ?? ""}
+        onChange={(e) =>
+          updateUsage("monthlyEnergyLevel3", e.target.value)
+        }
+      />
+    </div>
+
+    {/* Avg Energy (FULL WIDTH) */}
+    <div>
+      <Label>Avg Energy per L3 Session (kWh)</Label>
+      <Input
+        type="text"
+        placeholder="Enter average energy"
+        value={revenueData.usage.avgEnergyLevel3 ?? ""}
+        onChange={(e) =>
+          updateUsage("avgEnergyLevel3", e.target.value)
+        }
+      />
+    </div>
+  </div>
+)}
 
           </div> 
 
-<div className="grid md:grid-cols-2 gap-6">
+        </CardContent>
+      </Card>
 
-  {/* Monthly Energy L2 */}
-  <div>
-    <Label htmlFor="monthly-energy-l2">Monthly Energy Consumed (kWh) - Level 2</Label>
-    <Input
-      id="monthly-energy-l2"
-      type="number"
-      step="0.1"
-      placeholder="Total monthly L2 kWh consumed"
-      value={revenueData.usage.monthlyEnergyLevel2 || ''}
-      onChange={(e) => updateUsage('monthlyEnergyLevel2', e.target.value)}
-      className="mt-1"
-    />
-  </div>
+       <Card className="border-2 hover:border-orange-200 transition-colors">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+           
+            <TrendingUpIcon className="h-5 w-5 text-orange-600" />
+           Growth Rate
+          </CardTitle>
+          <CardDescription>
+            <p className="text-sm text-slate-500 mt-1">Expected yearly usage increase</p>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+<div>
 
-  {/* Monthly Energy L3 */}
-  <div>
-    <Label htmlFor="monthly-energy-l3">Monthly Energy Consumed (kWh) - Level 3</Label>
-    <Input
-      id="monthly-energy-l3"
-      type="number"
-      step="0.1"
-      placeholder="Total monthly L3 kWh consumed"
-      value={revenueData.usage.monthlyEnergyLevel3 || ''}
-      onChange={(e) => updateUsage('monthlyEnergyLevel3', e.target.value)}
-      className="mt-1"
-    />
-   
-  </div>
-
-</div>
-
-
-          <Separator />
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-
-             <Label htmlFor="session-duration">Avg Session Duration (hours)</Label>
-              <Input
-                id="session-duration"
-                type="number"
-                step="0.1"
-                placeholder="2.0"
-                value={revenueData.usage.avgSessionDuration || ''}
-                onChange={(e) => updateUsage('avgSessionDuration', e.target.value)}
-                className="mt-1"
-              />
-            </div>
             <div>
               <Label htmlFor="growth-rate">Annual Growth Rate (%)</Label>
               <Input
                 id="growth-rate"
-                type="number"
+                type="text"
                 placeholder="0"
                 value={revenueData.usage.growthRate || ''}
                 onChange={(e) => updateUsage('growthRate', e.target.value)}
                 className="mt-1"
               />
-              <p className="text-sm text-slate-500 mt-1">Expected yearly usage increase</p>
+             
             </div>
           </div>
         </CardContent>
       </Card>
-
       {/* Analysis Timeline */}
-      <Card className="border-2 hover:border-purple-200 transition-colors">
+      <Card className="border-2 hover:border-purple-300 transition-colors">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-purple-600" />

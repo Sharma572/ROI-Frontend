@@ -18,8 +18,10 @@ import { Calculator, Zap, DollarSign, TrendingUp, ArrowRight, CalculatorIcon } f
 import { getMockCalculation } from "../utils/mockData";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useWallet } from "@/contexts/WalletContext";
+import { useChargerType } from "@/contexts/ChargerTypeContext";
 
 const EVCalculator = () => {
+  const { chargerType } = useChargerType();
   const { user, loginWithRedirect, isAuthenticated } = useAuth0();
   const { setWalletBalance } = useWallet();
   const [hasRegistered, setHasRegistered] = useState(false);
@@ -71,12 +73,12 @@ const EVCalculator = () => {
   });
 
   const [results, setResults] = useState(null);
-
-  // useEffect(() => {
-  //   // Calculate results whenever data changes
-  //   const calculation = getMockCalculation(costData, revenueData);
-  //   setResults(calculation);
-  // }, [costData, revenueData]);
+  const [totalInvestments,setTotalInvestment] = useState(null);
+  useEffect(() => {
+    // Calculate results whenever data changes
+    const calculation = getMockCalculation(costData, revenueData);
+    setTotalInvestment(calculation);
+  }, [costData]);
 
 const isValidForCalculation = () => {
   const c = costData.equipment;
@@ -101,7 +103,7 @@ const isValidForCalculation = () => {
   return costValid && revenueValid;
 };
 
-  console.log("Result of calculation", results);
+  console.log("Result of calculation",  results?.revenueData?.timeline?.analysisYears);
 
 
 
@@ -138,49 +140,70 @@ const isValidForCalculation = () => {
     registerUser();
   }, [isAuthenticated, user, hasRegistered]);
 
-  const saveInvestmentReport = async (data) => {
-    const userId = user?.sub;
-    const payload = {
-      user_id: userId, // Replace with actual logged-in user if available
-      roi: `${data.roi}%`,
-      payback_period_years: data.paybackPeriod,
-      total_investment: data.totalInvestment,
-      five_year_profit: data.fiveYearProfit,
+  console.log("Result data in Ev calculator",results);
+  
 
-      annual_financial_summary: {
-        revenue: data.annualRevenue,
-        costs: data.annualCosts,
-        profit: data.annualProfit,
-      },
+const handleNext = () => {
+  const { equipment, operating } = costData;
 
-      investment_breakdown: {
-        equipment_costs: data.costBreakdown.equipment,
-        installation_costs: data.costBreakdown.installation,
-      },
+  const l2Qty = equipment.level2Chargers.quantity;
+  const l2Cost = equipment.level2Chargers.unitCost;
 
-      profit_projections: data.yearlyProfits,
-    };
+  const l3Qty = equipment.level3Chargers.quantity;
+  const l3Cost = equipment.level3Chargers.unitCost;
 
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BASE_URL}/api/v1/investments/createinvestment`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+  const electricity = operating.electricityCostPerKwh;
 
-      const result = await response.json();
-      console.log("Saved successfully:", result);
-      alert("✅ Investment report saved!");
-    } catch (error) {
-      console.error("Error saving report:", error);
-      alert("❌ Failed to save report");
+  // Electricity cost validation (common)
+  if (!electricity || electricity <= 0) {
+    alert("❌ Electricity Cost per kWh must be greater than 0.");
+    return;
+  }
+   console.log("chargerType",chargerType);
+   
+  // ========== LEVEL 2 ==========  
+  if (chargerType === "level2") {
+    if (l2Qty <= 0) {
+      alert("❌ Please enter Level 2 charger quantity greater than 0.");
+      return;
     }
-  };
+    if (l2Cost <= 0) {
+      alert("❌ Level 2 charger unit cost must be greater than 0.");
+      return;
+    }
+  }
+
+  // ========== LEVEL 3 ==========
+  if (chargerType === "level3") {
+    if (l3Qty <= 0) {
+      alert("❌ Please enter Level 3 charger quantity greater than 0.");
+      return;
+    }
+    if (l3Cost <= 0) {
+      alert("❌ Level 3 charger unit cost must be greater than 0.");
+      return;
+    }
+  }
+
+  // ========== BOTH ==========
+  if (chargerType === "both") {
+    if (l2Qty <= 0 || l3Qty <= 0) {
+      alert("❌ Both Level 2 and Level 3 charger quantities must be > 0.");
+      return;
+    }
+    if (l2Cost <= 0 || l3Cost <= 0) {
+      alert("❌ Both Level 2 and Level 3 charger unit costs must be > 0.");
+      return;
+    }
+  }
+
+  // If all good
+  console.log("✔ Validation passed", costData);
+  // go to next step...
+  setActiveTab("revenue")
+};
+
+
 
   const handleShowResultClick = async () => {
   try {
@@ -207,6 +230,13 @@ const data = await res.json();
 
     alert(`₹${payload.amount} deducted!`);
     // ✅ Continue only when API success
+    console.log("-----------------------");
+    
+    console.log("Cost Data",costData);
+    console.log("Revenue Data",revenueData);
+    
+    console.log("-----------------------");
+    
     const calculation = getMockCalculation(costData, revenueData);
     setResults(calculation);
     setActiveTab("results");
@@ -265,7 +295,8 @@ const data = await res.json();
                 {/* NEXT BUTTON */}
                 <div className="flex justify-end">
                 <Button
-  onClick={() => setActiveTab("revenue")}
+  // onClick={() => setActiveTab("revenue")}
+  onClick={handleNext}
   className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg 
              shadow-md hover:shadow-xl transition-all duration-300 flex items-center gap-2"
 >
@@ -314,26 +345,7 @@ const data = await res.json();
 
               <TabsContent value="results" className="space-y-6">
                 <ROIResults results={results} />
-                {results && (
-                  <>
-                    {isAuthenticated ? (
-                      <Button
-                        onClick={() => saveInvestmentReport(results)}
-                        className="bg-emerald-600 text-white"
-                      >
-                        Save Report
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => loginWithRedirect()}
-                        style={{background:"#1ac47d"}}
-                        className=" text-white"
-                      >
-                        Login to Save Report
-                      </Button>
-                    )}
-                  </>
-                )}
+               
               </TabsContent>
             </Tabs>
           </div>
@@ -348,14 +360,28 @@ const data = await res.json();
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {results ? (
+                {/* Update the logic where we are changing the investment */}
+               {
+                totalInvestments && (
+  <div className="bg-amber-50 p-4 rounded-lg">
+                      <div className="text-sm text-amber-600 font-medium">
+                        Total Investment
+                      </div>
+                      <div className="text-2xl font-bold text-amber-700">
+                        {formatCurrency(totalInvestments.totalInvestment)}
+                      </div>
+                    </div>
+                )
+               } 
+             
+                {results && (
                   <>
                     <div className="bg-emerald-50 p-4 rounded-lg">
                       <div className="text-sm text-emerald-600 font-medium">
                         ROI
                       </div>
                       <div className="text-2xl font-bold text-emerald-700">
-                        {results.roi}%
+                       {results.roi?.toFixed(2)}%
                       </div>
                     </div>
                     <div className="bg-fuchsia-50 p-4 rounded-lg">
@@ -363,7 +389,7 @@ const data = await res.json();
                         Annual ROI
                       </div>
                       <div className="text-2xl font-bold text-fuchsia-600">
-                     {(results.roi / 12).toFixed(2)}%
+                     {(results.roi / results?.revenueData?.timeline?.analysisYears).toFixed(2)}%
                       </div>
                     </div>
                     <div className="bg-blue-50 p-4 rounded-lg">
@@ -371,34 +397,24 @@ const data = await res.json();
                         Payback Period
                       </div>
                       <div className="text-2xl font-bold text-blue-700">
-                        {results.paybackPeriod} years
+                      {results.paybackPeriod.toFixed(1)} years
+
                       </div>
                     </div>
-                    <div className="bg-amber-50 p-4 rounded-lg">
-                      <div className="text-sm text-amber-600 font-medium">
-                        Total Investment
-                      </div>
-                      <div className="text-2xl font-bold text-amber-700">
-                        {formatCurrency(results.totalInvestment)}
-                      </div>
-                    </div>
+                  
                     <div className="bg-purple-50 p-4 rounded-lg">
                       <div className="text-sm text-purple-600 font-medium">
-                        5-Year Profit
+                        {results?.revenueData?.timeline?.analysisYears}-Year Profit
                       </div>
                       <div className="text-2xl font-bold text-purple-700">
                         {formatCurrency(results.fiveYearProfit)}
                       </div>
                     </div>
                   </>
-                ) : (
-                  <div className="text-center text-slate-500 py-8">
-                    <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Enter your data to see results</p>
-                  </div>
                 )}
               </CardContent>
             </Card>
+            
           </div>
         </div>
       </main>

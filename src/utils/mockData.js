@@ -100,6 +100,593 @@
 // };
 
 
+// export const getMockCalculation = (costData, revenueData) => {
+//   // ---------------------------
+//   // EQUIPMENT COSTS
+//   // ---------------------------
+//   const level2Total =
+//     (costData.equipment.level2Chargers.quantity || 0) *
+//     (costData.equipment.level2Chargers.unitCost || 0);
+
+//   const level3Total =
+//     (costData.equipment.level3Chargers.quantity || 0) *
+//     (costData.equipment.level3Chargers.unitCost || 0);
+
+//   const totalEquipmentCost =
+//     level2Total +
+//     level3Total +
+//     (costData.equipment.transformer || 0) +
+//     (costData.equipment.electricalInfrastructure || 0) +
+//     (costData.equipment.networkingSoftware || 0);
+
+//   // ---------------------------
+//   // INSTALLATION COSTS
+//   // ---------------------------
+//   const totalInstallationCost =
+//     (costData.installation.sitePreperation || 0) +
+//     (costData.installation.electricalInstallation || 0) +
+//     (costData.installation.permits || 0) +
+//     (costData.installation.laborCosts || 0);
+
+//   const totalInvestment = totalEquipmentCost + totalInstallationCost;
+
+//   // ---------------------------
+//   // OPERATING COSTS
+//   // ---------------------------
+//   const annualOperatingCosts =
+//     (costData.operating.maintenance || 0) +
+//     (costData.operating.networkFees || 0) +
+//     (costData.operating.insurance || 0) +
+//     (costData.operating.landLease || 0);
+
+//   // ---------------------------
+//   // USAGE & ENERGY CALCULATIONS (FIXED)
+//   // ---------------------------
+//   let dailyL2 = revenueData.usage.dailySessionsLevel2 || 0;
+//   let dailyL3 = revenueData.usage.dailySessionsLevel3 || 0;
+
+//   const monthlyInputL2 = revenueData.usage.monthlySessionsLevel2 || 0;
+//   const monthlyInputL3 = revenueData.usage.monthlySessionsLevel3 || 0;
+
+//   // 👉 If only monthly sessions provided, auto-calc daily = monthly / 30
+//   if (dailyL2 === 0 && monthlyInputL2 > 0) {
+//     dailyL2 = monthlyInputL2 / 30;
+//   }
+//   if (dailyL3 === 0 && monthlyInputL3 > 0) {
+//     dailyL3 = monthlyInputL3 / 30;
+//   }
+
+//   // monthly fallback
+//   const monthlyL2 = monthlyInputL2 || dailyL2 * 30;
+//   const monthlyL3 = monthlyInputL3 || dailyL3 * 30;
+
+//   // Avg Energy Per Session
+//   const energyL2 = revenueData.usage.avgEnergyLevel2 || 0;
+//   const energyL3 = revenueData.usage.avgEnergyLevel3 || 0;
+
+//   // Daily kWh
+//   const level2DailyEnergy = dailyL2 * energyL2;
+//   const level3DailyEnergy = dailyL3 * energyL3;
+
+//   // Monthly kWh
+//   const level2MonthlyEnergy = level2DailyEnergy * 30;
+//   const level3MonthlyEnergy = level3DailyEnergy * 30;
+
+//   // ---------------------------
+//   // REVENUE CALCULATIONS
+//   // ---------------------------
+//   const dailyLevel2Revenue =
+//     level2DailyEnergy * (revenueData.pricing.level2Rate || 0);
+
+//   const dailyLevel3Revenue =
+//     level3DailyEnergy * (revenueData.pricing.level3Rate || 0);
+
+//   const annualChargingRevenue =
+//     (dailyLevel2Revenue + dailyLevel3Revenue) * 365;
+
+//   const annualMembershipRevenue =
+//     (revenueData.pricing.membershipFee || 0) *
+//     12 *
+//     (dailyL2 + dailyL3) *
+//     30;
+
+//   const baseAnnualRevenue =
+//     annualChargingRevenue + annualMembershipRevenue;
+
+//   // ---------------------------
+//   // ELECTRICITY COST
+//   // ---------------------------
+//   const dailyElectricityCost =
+//     (level2DailyEnergy + level3DailyEnergy) *
+//     (costData.operating.electricityCostPerKwh || 0);
+
+//   const annualElectricityCost = dailyElectricityCost * 365;
+
+//   // ---------------------------
+//   // PROFIT
+//   // ---------------------------
+//   const baseAnnualProfit =
+//     baseAnnualRevenue - annualOperatingCosts - annualElectricityCost;
+
+//   let totalProfit = 0;
+//   let yearlyProfits = [];
+//   const growthRate = (revenueData.usage.growthRate || 0) / 100;
+
+//   for (let year = 1; year <= (revenueData.timeline.analysisYears || 5); year++) {
+//     const yearRevenue =
+//       baseAnnualRevenue * Math.pow(1 + growthRate, year - 1);
+
+//     const yearElectricityCost =
+//       annualElectricityCost * Math.pow(1 + growthRate, year - 1);
+
+//     const yearProfit =
+//       yearRevenue - annualOperatingCosts - yearElectricityCost;
+
+//     totalProfit += yearProfit;
+
+//     yearlyProfits.push({
+//       year,
+//       revenue: Math.round(yearRevenue),
+//       costs: Math.round(annualOperatingCosts + yearElectricityCost),
+//       profit: Math.round(yearProfit),
+//     });
+//   }
+
+//   const roi =
+//     totalInvestment > 0
+//       ? Math.round((totalProfit / totalInvestment) * 100)
+//       : 0;
+
+//   const paybackPeriod =
+//     baseAnnualProfit > 0
+//       ? Math.round((totalInvestment / baseAnnualProfit) * 10) / 10
+//       : 0;
+
+//   // ---------------------------
+//   // MONTHLY BREAKDOWN
+//   // ---------------------------
+//   const monthlyRevenue = Math.round(baseAnnualRevenue / 12);
+//   const monthlyCosts = Math.round(
+//     (annualOperatingCosts + annualElectricityCost) / 12
+//   );
+//   const monthlyProfit = Math.round(baseAnnualProfit / 12);
+
+//   const monthlyBreakdown = Array.from({ length: 12 }, (_, i) => ({
+//     month: new Date(2024, i).toLocaleString("default", { month: "short" }),
+//     revenue: monthlyRevenue,
+//     costs: monthlyCosts,
+//     profit: monthlyProfit,
+//   }));
+
+//   // ---------------------------
+//   // RETURN FINAL OUTPUT
+//   // ---------------------------
+//   return {
+//     totalInvestment: Math.round(totalInvestment),
+//     roi,
+//     paybackPeriod,
+//     fiveYearProfit: Math.round(totalProfit),
+
+//     // NEW VALUES
+//     level2DailyEnergy,
+//     level3DailyEnergy,
+//     level2MonthlyEnergy,
+//     level3MonthlyEnergy,
+
+//     annualRevenue: Math.round(baseAnnualRevenue),
+//     annualCosts: Math.round(annualOperatingCosts + annualElectricityCost),
+//     annualProfit: Math.round(baseAnnualProfit),
+
+//     yearlyProfits,
+//     monthlyBreakdown,
+
+//     costBreakdown: {
+//       equipment: Math.round(totalEquipmentCost),
+//       installation: Math.round(totalInstallationCost),
+//       operatingAnnual: Math.round(annualOperatingCosts),
+//       electricityAnnual: Math.round(annualElectricityCost),
+//     },
+//   };
+// };
+
+// export const getMockCalculation = (costData, revenueData) => {
+//   // ---------------------------
+//   // EQUIPMENT COSTS
+//   // ---------------------------
+//   const level2Total =
+//     (costData.equipment.level2Chargers.quantity || 0) *
+//     (costData.equipment.level2Chargers.unitCost || 0);
+
+//   const level3Total =
+//     (costData.equipment.level3Chargers.quantity || 0) *
+//     (costData.equipment.level3Chargers.unitCost || 0);
+
+//   const totalEquipmentCost =
+//     level2Total +
+//     level3Total +
+//     (costData.equipment.transformer || 0) +
+//     (costData.equipment.electricalInfrastructure || 0) +
+//     (costData.equipment.networkingSoftware || 0);
+
+//   // ---------------------------
+//   // INSTALLATION COSTS
+//   // ---------------------------
+//   const totalInstallationCost =
+//     (costData.installation.sitePreperation || 0) +
+//     (costData.installation.electricalInstallation || 0) +
+//     (costData.installation.permits || 0) +
+//     (costData.installation.laborCosts || 0);
+
+//   const totalInvestment = totalEquipmentCost + totalInstallationCost;
+
+//   // ---------------------------
+//   // OPERATING COSTS (ANNUAL FIXED)
+//   // ---------------------------
+//   const annualOperatingCosts =
+//     (costData.operating.maintenance || 0) +
+//     (costData.operating.networkFees || 0) +
+//     (costData.operating.insurance || 0) +
+//     (costData.operating.landLease || 0);
+
+//   // ---------------------------
+//   // USAGE & ENERGY
+//   // ---------------------------
+//   let dailyL2 = revenueData.usage.dailySessionsLevel2 || 0;
+//   let dailyL3 = revenueData.usage.dailySessionsLevel3 || 0;
+
+//   const monthlyInputL2 = revenueData.usage.monthlySessionsLevel2 || 0;
+//   const monthlyInputL3 = revenueData.usage.monthlySessionsLevel3 || 0;
+
+//   // Auto-calc daily if monthly provided
+//   if (dailyL2 === 0 && monthlyInputL2 > 0) dailyL2 = monthlyInputL2 / 30;
+//   if (dailyL3 === 0 && monthlyInputL3 > 0) dailyL3 = monthlyInputL3 / 30;
+
+//   const monthlyL2 = monthlyInputL2 || dailyL2 * 30;
+//   const monthlyL3 = monthlyInputL3 || dailyL3 * 30;
+
+//   // Avg energy
+//   const energyL2 = revenueData.usage.avgEnergyLevel2 || 0;
+//   const energyL3 = revenueData.usage.avgEnergyLevel3 || 0;
+
+//   // Daily kWh
+//   const level2DailyEnergy = dailyL2 * energyL2;
+//   const level3DailyEnergy = dailyL3 * energyL3;
+
+//   // Monthly kWh
+//   // const level2MonthlyEnergy = level2DailyEnergy * 30;
+//   const level2MonthlyEnergy = revenueData.usage.monthlyEnergyLevel2 || (level2DailyEnergy * 30);
+//   const level3MonthlyEnergy = revenueData.usage.monthlyEnergyLevel3 || (level3DailyEnergy * 30);
+
+//   // const level3MonthlyEnergy = level3DailyEnergy * 30;
+
+//   // ---------------------------
+//   // REVENUE
+//   // ---------------------------
+//   const dailyLevel2Revenue =
+//     level2DailyEnergy * (revenueData.pricing.level2Rate || 0);
+
+//   const dailyLevel3Revenue =
+//     level3DailyEnergy * (revenueData.pricing.level3Rate || 0);
+
+//   // Monthly charging revenue
+//   const monthlyChargingRevenue =
+//     (dailyLevel2Revenue + dailyLevel3Revenue) * 30;
+
+//   const annualChargingRevenue = monthlyChargingRevenue * 12;
+
+//   // Monthly membership revenue
+//   const monthlyMembershipRevenue =
+//     (revenueData.pricing.membershipFee || 0) *
+//     (dailyL2 + dailyL3) *
+//     30;
+
+//   const annualMembershipRevenue = monthlyMembershipRevenue * 12;
+
+//   const baseAnnualRevenue =
+//     annualChargingRevenue + annualMembershipRevenue;
+
+//   // ---------------------------
+//   // ELECTRICITY COST
+//   // ---------------------------
+//   const dailyElectricityCost =
+//     (level2DailyEnergy + level3DailyEnergy) *
+//     (costData.operating.electricityCostPerKwh || 0);
+
+//   const monthlyElectricityCost = dailyElectricityCost * 30;
+//   const annualElectricityCost = monthlyElectricityCost * 12;
+
+//   // ---------------------------
+//   // BASE ANNUAL PROFIT
+//   // ---------------------------
+//   const baseAnnualProfit =
+//     baseAnnualRevenue -
+//     annualOperatingCosts -
+//     annualElectricityCost;
+
+//   // ---------------------------
+//   // 5-YEAR PROFIT (With Growth)
+//   // ---------------------------
+//   let totalProfit = 0;
+//   let yearlyProfits = [];
+//   const growthRate = (revenueData.usage.growthRate || 0) / 100;
+
+//   for (let year = 1; year <= (revenueData.timeline.analysisYears || 5); year++) {
+//     const yearRevenue = baseAnnualRevenue * Math.pow(1 + growthRate, year - 1);
+//     const yearElectricityCost =
+//       annualElectricityCost * Math.pow(1 + growthRate, year - 1);
+
+//     const yearProfit =
+//       yearRevenue - annualOperatingCosts - yearElectricityCost;
+
+//     totalProfit += yearProfit;
+
+//     yearlyProfits.push({
+//       year,
+//       revenue: Math.round(yearRevenue),
+//       costs: Math.round(annualOperatingCosts + yearElectricityCost),
+//       profit: Math.round(yearProfit),
+//     });
+//   }
+
+//   // ---------------------------
+//   // ROI & PAYBACK
+//   // ---------------------------
+//   const roi =
+//     totalInvestment > 0
+//       ? Math.round((totalProfit / totalInvestment) * 100)
+//       : 0;
+
+//   const paybackPeriod =
+//     baseAnnualProfit > 0
+//       ? Math.round((totalInvestment / baseAnnualProfit) * 10) / 10
+//       : 0;
+
+//   // ---------------------------
+//   // MONTHLY BREAKDOWN (ALREADY CORRECT)
+//   // ---------------------------
+//   const monthlyRevenue = Math.round(baseAnnualRevenue / 12);
+//   const monthlyCosts = Math.round(
+//     (annualOperatingCosts + annualElectricityCost) / 12
+//   );
+//   const monthlyProfit = Math.round(baseAnnualProfit / 12);
+
+//   const monthlyBreakdown = Array.from({ length: 12 }, (_, i) => ({
+//     month: new Date(2024, i).toLocaleString("default", { month: "short" }),
+//     revenue: monthlyRevenue,
+//     costs: monthlyCosts,
+//     profit: monthlyProfit,
+//   }));
+
+//   // ---------------------------
+//   // RETURN OUTPUT
+//   // ---------------------------
+//   return {
+//     totalInvestment: Math.round(totalInvestment),
+//     roi,
+//     paybackPeriod,
+//     fiveYearProfit: Math.round(totalProfit),
+
+//     level2DailyEnergy,
+//     level3DailyEnergy,
+//     level2MonthlyEnergy,
+//     level3MonthlyEnergy,
+
+//     annualRevenue: Math.round(baseAnnualRevenue),
+//     annualCosts: Math.round(annualOperatingCosts + annualElectricityCost),
+//     annualProfit: Math.round(baseAnnualProfit),
+
+//     yearlyProfits,
+//     monthlyBreakdown,
+
+//     costBreakdown: {
+//       equipment: Math.round(totalEquipmentCost),
+//       installation: Math.round(totalInstallationCost),
+//       operatingAnnual: Math.round(annualOperatingCosts),
+//       electricityAnnual: Math.round(annualElectricityCost),
+//     },
+//     // user Input
+//       costData,
+//     revenueData,
+//   };
+// };
+
+// working Code 
+// export const getMockCalculation = (costData, revenueData) => {
+//   // ---------------------------
+//   // EQUIPMENT COSTS
+//   // ---------------------------
+//   const level2Total =
+//     (costData.equipment.level2Chargers.quantity || 0) *
+//     (costData.equipment.level2Chargers.unitCost || 0);
+
+//   const level3Total =
+//     (costData.equipment.level3Chargers.quantity || 0) *
+//     (costData.equipment.level3Chargers.unitCost || 0);
+
+//   const totalEquipmentCost =
+//     level2Total +
+//     level3Total +
+//     (costData.equipment.transformer || 0) +
+//     (costData.equipment.electricalInfrastructure || 0) +
+//     (costData.equipment.networkingSoftware || 0);
+
+//   // ---------------------------
+//   // INSTALLATION COSTS
+//   // ---------------------------
+//   const totalInstallationCost =
+//     (costData.installation.sitePreperation || 0) +
+//     (costData.installation.electricalInstallation || 0) +
+//     (costData.installation.permits || 0) +
+//     (costData.installation.laborCosts || 0);
+
+//   const totalInvestment = totalEquipmentCost + totalInstallationCost;
+
+//   // ---------------------------
+//   // OPERATING COSTS (ANNUAL FIXED)
+//   // ---------------------------
+//   const annualOperatingCosts =
+//     (costData.operating.maintenance || 0) +
+//     (costData.operating.networkFees || 0) +
+//     (costData.operating.insurance || 0) +
+//     (costData.operating.landLease || 0);
+
+//   // ---------------------------
+//   // USAGE & ENERGY
+//   // ---------------------------
+//   let dailyL2 = revenueData.usage.dailySessionsLevel2 || 0;
+//   let dailyL3 = revenueData.usage.dailySessionsLevel3 || 0;
+
+//   const monthlyInputL2 = revenueData.usage.monthlySessionsLevel2 || 0;
+//   const monthlyInputL3 = revenueData.usage.monthlySessionsLevel3 || 0;
+
+//   // Auto-calc daily if monthly provided
+//   if (dailyL2 === 0 && monthlyInputL2 > 0) dailyL2 = monthlyInputL2 / 30;
+//   if (dailyL3 === 0 && monthlyInputL3 > 0) dailyL3 = monthlyInputL3 / 30;
+
+//   const monthlySessionsL2 = monthlyInputL2 || dailyL2 * 30;
+//   const monthlySessionsL3 = monthlyInputL3 || dailyL3 * 30;
+
+//   // Avg energy
+//   const avgEnergyL2 = revenueData.usage.avgEnergyLevel2 || 0;
+//   const avgEnergyL3 = revenueData.usage.avgEnergyLevel3 || 0;
+
+//   // ---------------------------
+//   // MONTHLY ENERGY (FINAL LOGIC)
+//   // ---------------------------
+//   const level2MonthlyEnergy =
+//     revenueData.usage.monthlyEnergyLevel2 ||
+//     Math.round(monthlySessionsL2 * avgEnergyL2);
+
+//   const level3MonthlyEnergy =
+//     revenueData.usage.monthlyEnergyLevel3 ||
+//     Math.round(monthlySessionsL3 * avgEnergyL3);
+
+//   // ---------------------------
+//   // MONTHLY REVENUE (CORRECT)
+//   // ---------------------------
+//   const monthlyLevel2Revenue =
+//     level2MonthlyEnergy * (revenueData.pricing.level2Rate || 0);
+
+//   const monthlyLevel3Revenue =
+//     level3MonthlyEnergy * (revenueData.pricing.level3Rate || 0);
+
+//   const monthlyChargingRevenue =
+//     monthlyLevel2Revenue + monthlyLevel3Revenue;
+
+//   const annualChargingRevenue = monthlyChargingRevenue * 12;
+
+//   // Membership revenue
+//   const monthlyMembershipRevenue =
+//     (revenueData.pricing.membershipFee || 0) * (dailyL2 + dailyL3) * 30;
+
+//   const annualMembershipRevenue = monthlyMembershipRevenue * 12;
+
+//   const baseAnnualRevenue =
+//     annualChargingRevenue + annualMembershipRevenue;
+
+//   // ---------------------------
+//   // ELECTRICITY COST (CORRECT)
+//   // ---------------------------
+//   const monthlyElectricityCost =
+//     (level2MonthlyEnergy + level3MonthlyEnergy) *
+//     (costData.operating.electricityCostPerKwh || 0);
+
+//   const annualElectricityCost = monthlyElectricityCost * 12;
+
+//   // ---------------------------
+//   // BASE ANNUAL PROFIT
+//   // ---------------------------
+//   const baseAnnualProfit =
+//     baseAnnualRevenue -
+//     annualOperatingCosts -
+//     annualElectricityCost;
+
+//   // ---------------------------
+//   // 5-YEAR PROFIT (WITH GROWTH)
+//   // ---------------------------
+//   let totalProfit = 0;
+//   let yearlyProfits = [];
+//   const growthRate = (revenueData.usage.growthRate || 0) / 100;
+
+//   for (let year = 1; year <= (revenueData.timeline.analysisYears || 5); year++) {
+//     const yearRevenue = baseAnnualRevenue * Math.pow(1 + growthRate, year - 1);
+//     const yearElectricity =
+//       annualElectricityCost * Math.pow(1 + growthRate, year - 1);
+
+//     const yearProfit =
+//       yearRevenue - annualOperatingCosts - yearElectricity;
+
+//     totalProfit += yearProfit;
+
+//     yearlyProfits.push({
+//       year,
+//       revenue: Math.round(yearRevenue),
+//       costs: Math.round(annualOperatingCosts + yearElectricity),
+//       profit: Math.round(yearProfit),
+//     });
+//   }
+
+//   // ---------------------------
+//   // ROI & PAYBACK
+//   // ---------------------------
+//   const roi =
+//     totalInvestment > 0
+//       ? Math.round((totalProfit / totalInvestment) * 100)
+//       : 0;
+
+//   const paybackPeriod =
+//     baseAnnualProfit > 0
+//       ? Math.round((totalInvestment / baseAnnualProfit) * 10) / 10
+//       : 0;
+
+//   // ---------------------------
+//   // MONTHLY BREAKDOWN
+//   // ---------------------------
+//   const monthlyRevenue = Math.round(baseAnnualRevenue / 12);
+//   const monthlyCosts = Math.round(
+//     (annualOperatingCosts + annualElectricityCost) / 12
+//   );
+//   const monthlyProfit = Math.round(baseAnnualProfit / 12);
+
+//   const monthlyBreakdown = Array.from({ length: 12 }, (_, i) => ({
+//     month: new Date(2024, i).toLocaleString("default", { month: "short" }),
+//     revenue: monthlyRevenue,
+//     costs: monthlyCosts,
+//     profit: monthlyProfit,
+//   }));
+
+//   // ---------------------------
+//   // RETURN OUTPUT
+//   // ---------------------------
+//   return {
+//     totalInvestment,
+//     roi,
+//     paybackPeriod,
+//     fiveYearProfit: Math.round(totalProfit),
+
+//     level2MonthlyEnergy,
+//     level3MonthlyEnergy,
+
+//     annualRevenue: Math.round(baseAnnualRevenue),
+//     annualCosts: Math.round(annualOperatingCosts + annualElectricityCost),
+//     annualProfit: Math.round(baseAnnualProfit),
+
+//     yearlyProfits,
+//     monthlyBreakdown,
+
+//     costBreakdown: {
+//       equipment: Math.round(totalEquipmentCost),
+//       installation: Math.round(totalInstallationCost),
+//       operatingAnnual: Math.round(annualOperatingCosts),
+//       electricityAnnual: Math.round(annualElectricityCost),
+//     },
+
+//     // Include raw inputs
+//     costData,
+//     revenueData,
+//   };
+// };
+
 export const getMockCalculation = (costData, revenueData) => {
   // ---------------------------
   // EQUIPMENT COSTS
@@ -131,7 +718,7 @@ export const getMockCalculation = (costData, revenueData) => {
   const totalInvestment = totalEquipmentCost + totalInstallationCost;
 
   // ---------------------------
-  // OPERATING COSTS
+  // OPERATING COSTS (ANNUAL FIXED)
   // ---------------------------
   const annualOperatingCosts =
     (costData.operating.maintenance || 0) +
@@ -140,7 +727,7 @@ export const getMockCalculation = (costData, revenueData) => {
     (costData.operating.landLease || 0);
 
   // ---------------------------
-  // USAGE & ENERGY CALCULATIONS (FIXED)
+  // USAGE & ENERGY
   // ---------------------------
   let dailyL2 = revenueData.usage.dailySessionsLevel2 || 0;
   let dailyL3 = revenueData.usage.dailySessionsLevel3 || 0;
@@ -148,47 +735,49 @@ export const getMockCalculation = (costData, revenueData) => {
   const monthlyInputL2 = revenueData.usage.monthlySessionsLevel2 || 0;
   const monthlyInputL3 = revenueData.usage.monthlySessionsLevel3 || 0;
 
-  // 👉 If only monthly sessions provided, auto-calc daily = monthly / 30
-  if (dailyL2 === 0 && monthlyInputL2 > 0) {
-    dailyL2 = monthlyInputL2 / 30;
-  }
-  if (dailyL3 === 0 && monthlyInputL3 > 0) {
-    dailyL3 = monthlyInputL3 / 30;
-  }
+  // Auto-calc daily if monthly provided
+  if (dailyL2 === 0 && monthlyInputL2 > 0) dailyL2 = monthlyInputL2 / 30;
+  if (dailyL3 === 0 && monthlyInputL3 > 0) dailyL3 = monthlyInputL3 / 30;
 
-  // monthly fallback
-  const monthlyL2 = monthlyInputL2 || dailyL2 * 30;
-  const monthlyL3 = monthlyInputL3 || dailyL3 * 30;
+  const monthlySessionsL2 = monthlyInputL2 || dailyL2 * 30;
+  const monthlySessionsL3 = monthlyInputL3 || dailyL3 * 30;
 
-  // Avg Energy Per Session
-  const energyL2 = revenueData.usage.avgEnergyLevel2 || 0;
-  const energyL3 = revenueData.usage.avgEnergyLevel3 || 0;
-
-  // Daily kWh
-  const level2DailyEnergy = dailyL2 * energyL2;
-  const level3DailyEnergy = dailyL3 * energyL3;
-
-  // Monthly kWh
-  const level2MonthlyEnergy = level2DailyEnergy * 30;
-  const level3MonthlyEnergy = level3DailyEnergy * 30;
+  // Avg energy
+  const avgEnergyL2 = revenueData.usage.avgEnergyLevel2 || 0;
+  const avgEnergyL3 = revenueData.usage.avgEnergyLevel3 || 0;
 
   // ---------------------------
-  // REVENUE CALCULATIONS
+  // MONTHLY ENERGY (NO ROUNDING)
   // ---------------------------
-  const dailyLevel2Revenue =
-    level2DailyEnergy * (revenueData.pricing.level2Rate || 0);
+  const level2MonthlyEnergy =
+    revenueData.usage.monthlyEnergyLevel2 ||
+    (monthlySessionsL2 * avgEnergyL2);
 
-  const dailyLevel3Revenue =
-    level3DailyEnergy * (revenueData.pricing.level3Rate || 0);
+  const level3MonthlyEnergy =
+    revenueData.usage.monthlyEnergyLevel3 ||
+    (monthlySessionsL3 * avgEnergyL3);
 
-  const annualChargingRevenue =
-    (dailyLevel2Revenue + dailyLevel3Revenue) * 365;
+  // ---------------------------
+  // MONTHLY REVENUE
+  // ---------------------------
+  const monthlyLevel2Revenue =
+    level2MonthlyEnergy * (revenueData.pricing.level2Rate || 0);
 
-  const annualMembershipRevenue =
+  const monthlyLevel3Revenue =
+    level3MonthlyEnergy * (revenueData.pricing.level3Rate || 0);
+
+  const monthlyChargingRevenue =
+    monthlyLevel2Revenue + monthlyLevel3Revenue;
+
+  const annualChargingRevenue = monthlyChargingRevenue * 12;
+
+  // Membership revenue
+  const monthlyMembershipRevenue =
     (revenueData.pricing.membershipFee || 0) *
-    12 *
     (dailyL2 + dailyL3) *
     30;
+
+  const annualMembershipRevenue = monthlyMembershipRevenue * 12;
 
   const baseAnnualRevenue =
     annualChargingRevenue + annualMembershipRevenue;
@@ -196,60 +785,69 @@ export const getMockCalculation = (costData, revenueData) => {
   // ---------------------------
   // ELECTRICITY COST
   // ---------------------------
-  const dailyElectricityCost =
-    (level2DailyEnergy + level3DailyEnergy) *
+  const monthlyElectricityCost =
+    (level2MonthlyEnergy + level3MonthlyEnergy) *
     (costData.operating.electricityCostPerKwh || 0);
 
-  const annualElectricityCost = dailyElectricityCost * 365;
+  const annualElectricityCost = monthlyElectricityCost * 12;
 
   // ---------------------------
-  // PROFIT
+  // BASE ANNUAL PROFIT
   // ---------------------------
   const baseAnnualProfit =
-    baseAnnualRevenue - annualOperatingCosts - annualElectricityCost;
+    baseAnnualRevenue -
+    annualOperatingCosts -
+    annualElectricityCost;
 
+  // ---------------------------
+  // 5-YEAR PROFIT (NO ROUNDING)
+  // ---------------------------
   let totalProfit = 0;
   let yearlyProfits = [];
-  const growthRate = (revenueData.usage.growthRate || 0) / 100;
 
-  for (let year = 1; year <= (revenueData.timeline.analysisYears || 5); year++) {
+  const growthRate = (revenueData.usage.growthRate || 0) / 100;
+  const analysisYears = revenueData.timeline.analysisYears || 5;
+
+  for (let year = 1; year <= analysisYears; year++) {
     const yearRevenue =
       baseAnnualRevenue * Math.pow(1 + growthRate, year - 1);
 
-    const yearElectricityCost =
+    const yearElectricity =
       annualElectricityCost * Math.pow(1 + growthRate, year - 1);
 
     const yearProfit =
-      yearRevenue - annualOperatingCosts - yearElectricityCost;
+      yearRevenue - annualOperatingCosts - yearElectricity;
 
     totalProfit += yearProfit;
 
     yearlyProfits.push({
       year,
-      revenue: Math.round(yearRevenue),
-      costs: Math.round(annualOperatingCosts + yearElectricityCost),
-      profit: Math.round(yearProfit),
+      revenue: yearRevenue,
+      costs: annualOperatingCosts + yearElectricity,
+      profit: yearProfit,
     });
   }
 
+  // ---------------------------
+  // ROI & PAYBACK (NO ROUNDING)
+  // ---------------------------
   const roi =
     totalInvestment > 0
-      ? Math.round((totalProfit / totalInvestment) * 100)
+      ? (totalProfit / totalInvestment) * 100
       : 0;
 
   const paybackPeriod =
     baseAnnualProfit > 0
-      ? Math.round((totalInvestment / baseAnnualProfit) * 10) / 10
+      ? totalInvestment / baseAnnualProfit
       : 0;
 
   // ---------------------------
-  // MONTHLY BREAKDOWN
+  // MONTHLY BREAKDOWN (NO ROUNDING)
   // ---------------------------
-  const monthlyRevenue = Math.round(baseAnnualRevenue / 12);
-  const monthlyCosts = Math.round(
-    (annualOperatingCosts + annualElectricityCost) / 12
-  );
-  const monthlyProfit = Math.round(baseAnnualProfit / 12);
+  const monthlyRevenue = baseAnnualRevenue / 12;
+  const monthlyCosts =
+    (annualOperatingCosts + annualElectricityCost) / 12;
+  const monthlyProfit = baseAnnualProfit / 12;
 
   const monthlyBreakdown = Array.from({ length: 12 }, (_, i) => ({
     month: new Date(2024, i).toLocaleString("default", { month: "short" }),
@@ -259,33 +857,32 @@ export const getMockCalculation = (costData, revenueData) => {
   }));
 
   // ---------------------------
-  // RETURN FINAL OUTPUT
+  // RETURN OUTPUT
   // ---------------------------
   return {
-    totalInvestment: Math.round(totalInvestment),
+    totalInvestment,
     roi,
     paybackPeriod,
-    fiveYearProfit: Math.round(totalProfit),
+    fiveYearProfit: totalProfit,
 
-    // NEW VALUES
-    level2DailyEnergy,
-    level3DailyEnergy,
     level2MonthlyEnergy,
     level3MonthlyEnergy,
 
-    annualRevenue: Math.round(baseAnnualRevenue),
-    annualCosts: Math.round(annualOperatingCosts + annualElectricityCost),
-    annualProfit: Math.round(baseAnnualProfit),
+    annualRevenue: baseAnnualRevenue,
+    annualCosts: annualOperatingCosts + annualElectricityCost,
+    annualProfit: baseAnnualProfit,
 
     yearlyProfits,
     monthlyBreakdown,
 
     costBreakdown: {
-      equipment: Math.round(totalEquipmentCost),
-      installation: Math.round(totalInstallationCost),
-      operatingAnnual: Math.round(annualOperatingCosts),
-      electricityAnnual: Math.round(annualElectricityCost),
+      equipment: totalEquipmentCost,
+      installation: totalInstallationCost,
+      operatingAnnual: annualOperatingCosts,
+      electricityAnnual: annualElectricityCost,
     },
+
+    costData,
+    revenueData,
   };
 };
-

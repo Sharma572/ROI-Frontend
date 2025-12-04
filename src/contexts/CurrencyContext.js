@@ -197,8 +197,8 @@ export const CurrencyProvider = ({ children }) => {
     });
 
     return showCode
-      ? `${symbol}${formattedNumber} ${currencyCode}`
-      : `${symbol}${formattedNumber}`;
+      ? `${formattedNumber} ${currencyCode}`
+      : `${formattedNumber}`;
   };
 
   const formatCurrencyInput = (amount, currencyCode = currency) =>

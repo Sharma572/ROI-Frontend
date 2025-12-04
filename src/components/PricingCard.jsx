@@ -1,3 +1,5 @@
+import { useWallet } from "@/contexts/WalletContext";
+import { useAuth0 } from "@auth0/auth0-react";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -25,7 +27,7 @@ export default function PricingPlans() {
       {/* Header */}
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="font-outfit text-4xl font-extrabold mb-4 bg-gradient-to-r from-gray-900 to-gray-700 text-transparent bg-clip-text">
-          Unlock the Full Power of AI
+          Unlock the Full Power of EV ROI Calculations
         </h2>
       
       </div>
@@ -50,34 +52,37 @@ export default function PricingPlans() {
         <label className="flex items-center gap-2">
           <ShieldCheck />
           {/* <input type="radio" className="accent-emerald-600" /> */}
-          PayPal
+          Net Banking
         </label>
       </div>
 </div>
  
 
       {/* Pricing Cards */}
-      <div className="max-w-7xl mx-auto mt-6 grid md:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto mt-16 mb-8 grid md:grid-cols-3 gap-8">
        <PriceCard
   title="Starter Pack"
-  price="₹299"
-  credits={20}
- 
+  price="₹499 / $7"
+  credits={15}
+ Effective_Cost_per_Credit={"₹33 / $0.46 per credit"}
+ Best_For={["New users","Students & small consultants","Occasional ROI calculations"]}
 />
 
 <PriceCard
   title="Pro Pack"
-  price="₹799"
-  credits={70}
+  price="₹1,499 / $18"
+  credits={60}
   recommended={true}
-
+  Effective_Cost_per_Credit={"₹25 / $0.30 per credit"}
+  Best_For={["EV consultants","Small infra companies","EV charger installers"]}
 />
 
 <PriceCard
   title="Business Pack"
-  price="₹1999"
-  credits={200}
- 
+  price="₹3,499 / $40"
+  credits={150}
+  Effective_Cost_per_Credit={"₹23 / $0.26 per credit"}
+  Best_For={["CPOs","Developers & EPC firms"]}
 />
 
       </div>
@@ -85,163 +90,14 @@ export default function PricingPlans() {
   );
 }
 
-// function PriceCard({ title, price, subText, perDetails, recommended }) {
-//   return (
-//     <div
-//       className={`relative rounded-2xl p-8 border transition-all duration-500 ${
-//         recommended
-//           ? "border-emerald-500 shadow-xl shadow-emerald-100 hover:shadow-emerald-200 scale-[1.02]"
-//           : "border-gray-200 hover:border-emerald-400 hover:shadow-md"
-//       }`}
-//       style={{
-//         backgroundColor: "#1AC47D1A", // ✅ Light emerald translucent background
-//       }}
-//     >
-//       {recommended && (
-//         <div className="absolute -top-3 right-6 bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
-//           Most Recommended
-//         </div>
-//       )}
 
-//       <div className="text-left">
-//         <h3 className="text-2xl font-semibold text-gray-800">{title}</h3>
-
-//         <div style={{color:'#1ac47d'}} className="text-5xl font-bold  mt-4">{price}</div>
-//         <p className="text-sm mt-2 text-gray-500">{subText}</p>
-
-//         <p className="text-xs mt-6 text-emerald-700/70">{perDetails}</p>
-
-//         <button
-//          style={{background:"#1ac47d"}} className="w-full mt-8 text-white font-semibold py-3 rounded-xl transition-all duration-300 hover:shadow-lg"
-//         >
-//           Subscribe
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
-// function PriceCard({ title, price, subText, perDetails, recommended }) {
-//   const handlePayment = async () => {
-//     try {
-//       // Convert price to numeric amount (e.g. "$14.99" → 14.99)
-//       const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ""));
-//       const amountInRupees = Math.round(numericPrice * 83); // Rough USD→INR (optional)
-//       const amount = amountInRupees || 500; // fallback for demo
-
-//       // 1️⃣ Create order on your backend
-//       const orderResponse = await fetch(`${process.env.REACT_APP_BASE_URL}/api/v1/payment/order`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//           amount: amount, // ₹
-//           currency: "INR",
-//           receipt: `${title}_plan_${Date.now()}`,
-//         }),
-//       });
-
-//       const orderData = await orderResponse.json();
-//       if (!orderData.success) {
-//         alert("❌ Failed to create Razorpay order!");
-//         return;
-//       }
-//      console.log("Order Response 💳",orderResponse);
-     
-//       const { id: order_id, currency } = orderData.order;
-
-//       // 2️⃣ Configure Razorpay Checkout
-//       const options = {
-//         key: "rzp_test_RelPTZxFaBCsfD", // your Razorpay test key
-//         amount: orderData.order.amount,
-//         currency: currency,
-//         name: "EV Charging ROI Calculator",
-//         description: `${title} Subscription`,
-//         order_id: order_id,
-//         handler: async function (response) {
-//           // 3️⃣ Verify payment signature
-//           const verifyResponse = await fetch(`${process.env.REACT_APP_BASE_URL}/api/v1/payment/verify`, {
-//             method: "POST",
-//             headers: { "Content-Type": "application/json" },
-//             body: JSON.stringify({
-//               razorpay_order_id: response.razorpay_order_id,
-//               razorpay_payment_id: response.razorpay_payment_id,
-//               razorpay_signature: response.razorpay_signature,
-//             }),
-//           });
-
-//           const verifyData = await verifyResponse.json();
-//           if (verifyData.success) {
-//             alert(`✅ Payment verified for ${title} plan!`);
-//           } else {
-//             alert("❌ Payment verification failed!");
-//           }
-//         },
-//         prefill: {
-//           name: "Raunak Sharma",
-//           email: "test@example.com",
-//           contact: "9999999999",
-//         },
-//         notes: {
-//           plan: title,
-//         },
-//         theme: {
-//           color: "#1ac47d",
-//         },
-//       };
-
-//       // 4️⃣ Open Razorpay popup
-//       const razor = new window.Razorpay(options);
-//       razor.open();
-//     } catch (error) {
-//       console.error(error);
-//       alert("Something went wrong!");
-//     }
-//   };
-
-//   return (
-//     <div
-//       className={`relative rounded-2xl p-8 border transition-all duration-500 ${
-//         recommended
-//           ? "border-emerald-500 shadow-xl shadow-emerald-100 hover:shadow-emerald-200 scale-[1.02]"
-//           : "border-gray-200 hover:border-emerald-400 hover:shadow-md"
-//       }`}
-//       style={{
-//         backgroundColor: "#1AC47D1A",
-//       }}
-//     >
-//       {recommended && (
-//         <div className="absolute -top-3 right-6 bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
-//           Most Recommended
-//         </div>
-//       )}
-
-//       <div className="text-left">
-//         <h3 className="text-3xl font-outfit font-extrabold text-gray-800">{title}</h3>
-
-//         <div style={{ color: "#1ac47d" }} className="text-2xl font-outfit font-bold mt-4">
-//           {price}
-//         </div>
-//         <p className="text-sm mt-2 text-gray-500">{subText}</p>
-//         <p className="text-xs mt-6 text-emerald-700/70">{perDetails}</p>
-
-//         <button
-//           onClick={handlePayment}
-//           style={{ background: "#1ac47d" }}
-//           className="w-full mt-8 text-white font-semibold py-3 rounded-xl transition-all duration-300 hover:shadow-lg"
-//         >
-//           Subscribe
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-function PriceCard({ title, price, credits, recommended }) {
+function PriceCard({ title, price, credits,Effective_Cost_per_Credit, Best_For,recommended }) {
+    const { user } = useAuth0();
+     const { setWalletBalance } = useWallet();
   const handlePayment = async () => {
     try {
       const amount = parseInt(price.replace(/[^0-9]/g, "")) || 500;
-
+      const credit = credits
       const orderResponse = await fetch(
         `${process.env.REACT_APP_BASE_URL}/api/v1/payment/order`,
         {
@@ -256,6 +112,8 @@ function PriceCard({ title, price, credits, recommended }) {
       );
 
       const orderData = await orderResponse.json();
+      console.log("orderData 🔸",orderData);
+      
       if (!orderData.success) {
         alert("❌ Failed to create Razorpay order!");
         return;
@@ -290,6 +148,33 @@ function PriceCard({ title, price, credits, recommended }) {
           const verifyData = await verifyResponse.json();
 
           if (verifyData.success) {
+         
+             try {
+                const userID = user?.sub
+                const payload = {
+                  user_id: userID,
+                  amount: credit,
+                };
+            
+                const res = await fetch(`${process.env.REACT_APP_BASE_URL}/api/v1/user/add-credit`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(payload),
+                });
+            
+                if (!res.ok) throw new Error("Add Credit Failed");
+            const data = await res.json();
+                  console.log("data after adding credits ",data);
+                  
+                // ✅ update global balance
+                 setWalletBalance(data.updatedCredit);
+
+              } catch (error) {
+                console.error(error);
+                alert("Payment/Deduction failed. Try again!");
+              }
             alert(`✅ Payment successful! ${credits} credits added to your account.`);
           } else {
             alert("❌ Payment verification failed!");
@@ -307,52 +192,75 @@ function PriceCard({ title, price, credits, recommended }) {
   };
 
   return (
-    <div
-      className={`
-        relative rounded-3xl p-8 transition-all duration-500 
-        bg-white/70 backdrop-blur-xl border border-gray-200
-        hover:shadow-xl hover:shadow-emerald-300/40 hover:-translate-y-1 
-        ${recommended ? "ring-2 ring-[#1AC47D]" : ""}
-      `}
-    >
-      {/* Recommended Badge */}
-      {recommended && (
-        <div className="absolute -top-4 right-6 bg-[#1AC47D] text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg">
-          Most Popular
-        </div>
-      )}
-
-      {/* Title */}
-      <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-        {title}
-      </h3>
-
-      {/* Price */}
-      <div className="mt-5">
-        <span className="text-4xl font-extrabold bg-gradient-to-r from-[#1AC47D] to-green-600 bg-clip-text text-transparent">
-          {price}
-        </span>
-      </div>
-
-      {/* Credits */}
-      <p className="text-sm mt-3 text-gray-700 font-medium">
-        {credits} Credits Included
-      </p>
-
-      {/* Divider */}
-      <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent my-3"></div>
-
-    
-
-      {/* Purchase Button */}
-      <button
-        onClick={handlePayment}
-        style={{ background: "#1ac47d" }}
-        className="w-full mt-2 text-white font-semibold py-3 rounded-xl 
-                   transition-all duration-300 hover:shadow-lg hover:bg-[#18b06f]"
-      >
-        Buy Credits
-      </button>
+ <div
+  className={`
+    relative rounded-3xl p-8 transition-all duration-500 
+    bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)]
+    hover:shadow-[0_12px_40px_rgba(0,0,0,0.10)] hover:-translate-y-1
+    border border-gray-100
+    ${recommended ? "ring-2 ring-[#1AC47D]" : ""}
+  `}
+>
+  {/* Recommended Badge */}
+  {recommended && (
+    <div className="absolute -top-4 right-6 bg-[#1AC47D] text-white text-xs font-bold px-4 py-1 rounded-full shadow-md">
+      Most Popular
     </div>
+  )}
+
+  {/* Title */}
+  <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+
+  {/* Price */}
+  <div className="mt-4 mb-1">
+    <span className="text-4xl font-extrabold text-[#10B26C]">
+      {price}
+    </span>
+  </div>
+
+  {/* Credits Badge */}
+  <p className="inline-block mt-2 text-xs font-bold bg-[#DFF7EB] 
+    text-[#0E9E5A] px-3 py-1 rounded-full shadow-sm">
+    {credits} Credits Included
+  </p>
+
+  {/* Effective Cost */}
+<p className="inline-block text-[10px] mt-2 bg-[#E6F9EF] 
+   text-[#777777] font-semibold px-2 py-1 rounded-full">
+  {Effective_Cost_per_Credit}
+</p>
+
+
+
+  {/* Divider */}
+  <div className="my-5 border-t border-gray-200"></div>
+
+  {/* Best For */}
+  <div>
+    <p className="text-sm font-semibold text-gray-900 mb-2">Best For:</p>
+    <ul className="space-y-2 text-gray-700 text-sm">
+      {Best_For.map((item, idx) => (
+        <li key={idx} className="flex items-center font-outfit font-semibold text-sm gap-2">
+          <span className="w-2 h-2 bg-[#1AC47D] rounded-full"></span>
+          {item}
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  {/* Buy Button */}
+  <button
+    onClick={handlePayment}
+    className="
+      w-full mt-6 py-3 rounded-2xl font-semibold text-white 
+      bg-gradient-to-r from-[#1AC47D] to-[#13A86B]
+      hover:shadow-lg hover:scale-[1.02] transition-all duration-300
+    "
+  >
+    Buy Credits
+  </button>
+</div>
+
+
   );
 }

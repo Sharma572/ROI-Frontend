@@ -3,6 +3,7 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "./components/ui/toaster";
 import { CurrencyProvider } from "./contexts/CurrencyContext";
+import { ChargerTypeProvider } from "./contexts/ChargerTypeContext";
 import EVCalculator from "./components/EVCalculator";
 import InvestmentTable from "./components/InvestmentTable";
 import { WalletProvider } from "./contexts/WalletContext";
@@ -16,6 +17,7 @@ function App() {
     <div className="App">
       <CurrencyProvider>
         <WalletProvider>
+          <ChargerTypeProvider>
         <BrowserRouter>
         <Header></Header>
           <Routes>
@@ -27,6 +29,7 @@ function App() {
           <Footer></Footer>
           <Toaster />
         </BrowserRouter>
+         </ChargerTypeProvider>
         </WalletProvider>
       </CurrencyProvider>
     </div>

@@ -144,6 +144,45 @@ const InvestmentReport = () => {
   const CurrentUserId = user?.sub;
   const [data, setData] = useState([]);
   const navigate = useNavigate();
+const [editModalOpen, setEditModalOpen] = useState(false);
+const [editProjectName, setEditProjectName] = useState("");
+const [selectedProject, setSelectedProject] = useState(null);
+const handleEdit = (project) => {
+  setSelectedProject(project);
+  setEditProjectName(project.project_name);
+  setEditModalOpen(true);
+};
+const handleUpdateProjectName = async () => {
+  try {
+    const response = await fetch(
+      `${process.env.REACT_APP_BASE_URL}/api/v1/investments/updateinvestment`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedProject._id,
+          project_name: editProjectName,
+        }),
+      }
+    );
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message);
+
+    setData((prev) =>
+      prev.map((item) =>
+        item._id === selectedProject._id
+          ? { ...item, project_name: editProjectName }
+          : item
+      )
+    );
+
+    setEditModalOpen(false);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to update project name!");
+  }
+};
 
   useEffect(() => {
     fetch(
@@ -166,6 +205,19 @@ const InvestmentReport = () => {
       {
         accessorKey: "project_name",
         header: "Project Name",
+        Cell: ({ row }) => (
+    <div className="flex items-center justify-between">
+      <span className="font-bold">{row.original.project_name}</span>
+
+      {/* Edit Button beside Project Name */}
+      <button
+        onClick={() => handleEdit(row.original)}
+        className="ml-3 text-blue-600 hover:text-blue-800 underline text-sm"
+      >
+        Edit
+      </button>
+    </div>
+  ),
       },
       {
         accessorKey: "roi",
@@ -266,6 +318,37 @@ const InvestmentReport = () => {
           sx: { cursor: "pointer" },
         }}
       />
+      {editModalOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-80">
+      <h3 className="text-lg font-bold mb-4">Edit Project Name</h3>
+
+      <input
+        type="text"
+        className="border rounded-md w-full px-3 py-2"
+        value={editProjectName}
+        onChange={(e) => setEditProjectName(e.target.value)}
+      />
+
+      <div className="flex justify-end gap-3 mt-4">
+        <button
+          onClick={() => setEditModalOpen(false)}
+          className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleUpdateProjectName}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

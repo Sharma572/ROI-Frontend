@@ -35,6 +35,8 @@ const EVCalculator = () => {
   const { chargerType } = useChargerType();
   const { user, loginWithRedirect, isAuthenticated } = useAuth0();
   const { setWalletBalance } = useWallet();
+  const [isLoading, setIsLoading] = useState(false);
+
   const [hasRegistered, setHasRegistered] = useState(false);
   const [isAutofill, setIsAutofill] = useState(false);
   console.log("Current Usr Details 🫡", user);
@@ -218,49 +220,18 @@ const EVCalculator = () => {
     setActiveTab("revenue");
   };
 
-  const handleShowResultClick = async () => {
-    try {
-      const userID = user?.sub;
-      const payload = {
-        user_id: userID,
-        amount: 1,
-      };
+  // const handleShowResultClick = async () => {
+  //   try {
+  //     // Save Investment Data to backend here...
 
-      const res = await fetch(
-        `${process.env.REACT_APP_BASE_URL}/api/v1/user/deduct`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (!res.ok) throw new Error("Deduction Failed");
-      const data = await res.json();
-      console.log("data after deduction", data);
-
-      // ✅ update global balance
-      setWalletBalance(data.remainingCredit);
-
-      alert(`₹${payload.amount} deducted!`);
-      // ✅ Continue only when API success
-      console.log("-----------------------");
-
-      console.log("Cost Data", costData);
-      console.log("Revenue Data", revenueData);
-
-      console.log("-----------------------");
-
-      const calculation = getMockCalculation(costData, revenueData);
-      setResults(calculation);
-      setActiveTab("results");
-    } catch (error) {
-      console.error(error);
-      alert("Payment/Deduction failed. Try again!");
-    }
-  };
+  //     const calculation = getMockCalculation(costData, revenueData);
+  //     setResults(calculation);
+  //     setActiveTab("results");
+  //   } catch (error) {
+  //     console.error(error);
+  //     alert("Payment/Deduction failed. Try again!");
+  //   }
+  // };
 
   // useEffect(() => {
   //   if (!project) return;
@@ -283,9 +254,106 @@ const EVCalculator = () => {
   //   setActiveTab("results");  // Jump to result tab automatically
   // }, [project]);
 
+  const handleShowResultClick = async () => {
+  try {
+      setIsLoading(true);
+       // Generate unique project name based on date-time
+    const now = new Date();
+    const autoProjectName =
+      "Project-" +
+      now.getFullYear() +
+      "-" +
+      String(now.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(now.getDate()).padStart(2, "0") +
+      "-" +
+      String(now.getHours()).padStart(2, "0") +
+      String(now.getMinutes()).padStart(2, "0") +
+      String(now.getSeconds()).padStart(2, "0")
+    // 1️⃣ Run calculation
+    const calculation = getMockCalculation(costData, revenueData);
+    setResults(calculation);
+    setActiveTab("results");
+
+    // 2️⃣ Structure payload for backend
+    const payload = {
+      currentUser: {
+        sub: user?.sub,      // from auth0 or session
+        email: user?.email,
+        email_verified: true,
+        name: user?.name,
+        picture: user?.picture,
+      },
+
+      // PROJECT INFO
+      project_name: autoProjectName,
+
+      // MAIN CALC METRICS
+      roi: calculation.roi.toFixed(2) + "%",
+      payback_period_years: calculation.paybackPeriod,
+      total_investment: calculation.totalInvestment,
+      five_year_profit: calculation.fiveYearProfit,
+
+      // ANNUAL FINANCIAL SUMMARY
+      annual_financial_summary: {
+        revenue: calculation.annualRevenue,
+        costs: calculation.annualCosts,
+        profit: calculation.annualProfit,
+      },
+
+      // BREAKDOWN
+      investment_breakdown: {
+        equipment_costs: calculation.costBreakdown.equipment,
+        installation_costs: calculation.costBreakdown.installation,
+      },
+
+      // PROFIT PROJECTIONS (YEAR-WISE)
+      profit_projections: calculation.yearlyProfits.map((item) => ({
+        year: item.year,
+        revenue: item.revenue,
+        costs: item.costs,
+        profit: item.profit,
+      })),
+
+      // SAVE ALL USER RAW INPUTS
+      userInputCost: costData,
+      userInputRevenue: revenueData,
+    };
+
+    console.log("🚀 Final Payload Sent To Backend:", payload);
+
+    // 3️⃣ SEND TO BACKEND
+    const response = await fetch(
+      "http://localhost:8080/api/v1/investments/createinvestment",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to save investment");
+    }
+
+    console.log("Investment Saved:", data);
+
+  } catch (error) {
+    console.error("Error saving investment:", error);
+    alert("Something went wrong while saving investment.");
+  }finally{
+      setIsLoading(false);
+  }
+};
+
+
   useEffect(() => {
     if (!project) return;
-
+    
     setIsAutofill(true); // ⭐ Mark that autofill is happening
 
     if (project.userInputCost) {
@@ -303,8 +371,10 @@ const EVCalculator = () => {
     setResults(calc);
     setActiveTab("results");
   }, [project]);
+  
   const handleNewProject = () => {
     setResults(null)
+    setProjectName(false);
     setCostData({
     equipment: {
       level2Chargers: { quantity: 0, unitCost: 0 },
@@ -461,18 +531,25 @@ const EVCalculator = () => {
                   >
                    <CalculatorIcon /> Calculate & Show Result
                   </Button> */}
-                  <Button
-                    // disabled={!isValidForCalculation()}
-                    onClick={handleShowResultClick}
-                    // className={`text-white ${
-                    //   !isValidForCalculation()
-                    //     ? "bg-gray-400 cursor-not-allowed"
-                    //     : "bg-green-700"
-                    // }`}
-                    className="bg-green-600 text-white"
-                  >
-                    <CalculatorIcon /> Calculate & Show Result
-                  </Button>
+                 <Button
+  onClick={handleShowResultClick}
+  disabled={isLoading}   // Disable when loading
+  className={`bg-green-600 text-white flex items-center gap-2 ${
+    isLoading ? "opacity-70 cursor-not-allowed" : ""
+  }`}
+>
+  {isLoading ? (
+    <>
+      <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+      Saving...
+    </>
+  ) : (
+    <>
+      <CalculatorIcon /> Calculate & Show Result
+    </>
+  )}
+</Button>
+
                 </div>
               </TabsContent>
 

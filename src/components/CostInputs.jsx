@@ -512,7 +512,9 @@ const updateEquipmentData = (type, field, value) => {
             <div>
              <div className="space-y-2">
 
-
+<Label htmlFor="land-lease">
+                Revenue Share Type ({getCurrencySymbol()})
+              </Label>
   {/* Modern Card Container */}
   <div className="flex">
     {/* Dropdown */}

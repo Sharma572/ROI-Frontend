@@ -844,7 +844,7 @@ const handleJsonPdfDownload = async () => {
         </div>
       </div>
 
-      {/* {results && (
+      {results && (
         <>
           {isAuthenticated ? (
             // <Button
@@ -869,8 +869,8 @@ const handleJsonPdfDownload = async () => {
             </Button>
           )}
         </>
-      )} */}
-      {/* <Dialog open={showModal} onOpenChange={setShowModal}>
+      )}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Name Your Project</DialogTitle>
@@ -895,7 +895,7 @@ const handleJsonPdfDownload = async () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog> */}
+      </Dialog>
     </div>
   );
 };

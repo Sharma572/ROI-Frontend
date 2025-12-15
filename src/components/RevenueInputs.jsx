@@ -23,84 +23,10 @@ console.log("Charger Type Selected on Cost",chargerType);
       }
     }));
   };
+
+  // Older Logic
 // const updateUsage = (field, value) => {
-//   const num = value === "" ? null : parseFloat(value);
-
-//   setRevenueData(prev => {
-//     const usage = { ...prev.usage };
-
-//     // Save cleaned value
-//     usage[field] = num;
-
-//     // If input is empty → reset related fields
-//     if (num === null) {
-//       if (field === "dailySessionsLevel3") {
-//         usage.monthlySessionsLevel3 = null;
-//         usage.monthlyEnergyLevel3 = null;
-//       }
-
-//       if (field === "avgEnergyLevel3") {
-//         usage.monthlyEnergyLevel3 = null;
-//       }
-
-//       if (field === "monthlyEnergyLevel3") {
-//         usage.dailySessionsLevel3 = null;
-//         usage.monthlySessionsLevel3 = null;
-//       }
-
-//       return { ...prev, usage };
-//     }
-
-//     // ---------- AUTO SYNC START ---------- //
-
-//     // LEVEL 3 SESSIONS ↔ MONTHLY
-//     if (field === "dailySessionsLevel3") {
-//       usage.monthlySessionsLevel3 = Math.round(num * 30);
-//     }
-//     if (field === "monthlySessionsLevel3") {
-//       usage.dailySessionsLevel3 = Number((num / 30).toFixed(2));
-//     }
-
-//     // MONTHLY ENERGY → SESSIONS
-//     if (field === "monthlyEnergyLevel3") {
-//       const avg = usage.avgEnergyLevel3 || 0;
-
-//       if (avg > 0) {
-//         const dailyEnergy = num / 30;
-//         const dailySessions = dailyEnergy / avg;
-
-//         usage.dailySessionsLevel3 = Number(dailySessions.toFixed(2));
-//         usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
-//       }
-//     }
-
-//     // DAILY SESSIONS + AVG ENERGY → MONTHLY ENERGY
-//     if (field === "dailySessionsLevel3" || field === "avgEnergyLevel3") {
-//       const daily = usage.dailySessionsLevel3 || 0;
-//       const avg = usage.avgEnergyLevel3 || 0;
-
-//       if (daily > 0 && avg > 0) {
-//         usage.monthlyEnergyLevel3 = Math.round(daily * avg * 30);
-//       }
-//     }
-
-//     // AVG ENERGY CHANGE → RECALC sessions
-//     if (field === "avgEnergyLevel3" && usage.monthlyEnergyLevel3 > 0) {
-//       const dailyEnergy = usage.monthlyEnergyLevel3 / 30;
-//       const dailySessions = dailyEnergy / num;
-
-//       usage.dailySessionsLevel3 = Number(dailySessions.toFixed(2));
-//       usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
-//     }
-
-//     // ---------- AUTO SYNC END ---------- //
-
-//     return { ...prev, usage };
-//   });
-// };
-
-// const updateUsage = (field, value) => {
-//   const num = parseFloat(value) ;
+//   const num = parseFloat(value);
 
 //   setRevenueData(prev => {
 //     const usage = { ...prev.usage, [field]: num }; // <-- MUST COME FIRST
@@ -126,7 +52,7 @@ console.log("Charger Type Selected on Cost",chargerType);
 //     }
 
 //     // ------------------------------------------
-//     // AUTO: MONTHLY ENERGY → SESSIONS (if AVG exists)
+//     // MONTHLY ENERGY → SESSIONS (if AVG exists)
 //     // ------------------------------------------
 
 //     // LEVEL 2
@@ -156,7 +82,7 @@ console.log("Charger Type Selected on Cost",chargerType);
 //     }
 
 //     // ------------------------------------------
-//     // AUTO: DAILY SESSIONS + AVG ENERGY → MONTHLY ENERGY
+//     // DAILY SESSIONS + AVG ENERGY → MONTHLY ENERGY
 //     // ------------------------------------------
 
 //     // LEVEL 2
@@ -182,7 +108,7 @@ console.log("Charger Type Selected on Cost",chargerType);
 //     }
 
 //     // ------------------------------------------
-//     // AUTO: IF AVG ENERGY CHANGED & MONTHLY ENERGY EXISTS
+//     // AVG ENERGY CHANGE → RECALC SESSIONS
 //     // ------------------------------------------
 
 //     // LEVEL 2
@@ -203,19 +129,82 @@ console.log("Charger Type Selected on Cost",chargerType);
 //       usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
 //     }
 
+//     // ------------------------------------------
+//     // ⭐ AUTO-CALCULATE AVG ENERGY (NEW CODE)
+//     // ------------------------------------------
+
+//     // LEVEL 2
+//     if (
+//       usage.monthlyEnergyLevel2 > 0 &&
+//       usage.monthlySessionsLevel2 > 0
+//     ) {
+//       usage.avgEnergyLevel2 = Number(
+//         (usage.monthlyEnergyLevel2 / usage.monthlySessionsLevel2).toFixed(2)
+//       );
+//     }
+
+//     // LEVEL 3
+//     if (
+//       usage.monthlyEnergyLevel3 > 0 &&
+//       usage.monthlySessionsLevel3 > 0
+//     ) {
+//       usage.avgEnergyLevel3 = Number(
+//         (usage.monthlyEnergyLevel3 / usage.monthlySessionsLevel3).toFixed(2)
+//       );
+//     }
+
 //     return { ...prev, usage };
 //   });
 // };
 
 const updateUsage = (field, value) => {
-  const num = parseFloat(value);
+  const num = value === "" ? 0 : parseFloat(value) || 0;
 
-  setRevenueData(prev => {
-    const usage = { ...prev.usage, [field]: num }; // <-- MUST COME FIRST
+  setRevenueData((prev) => {
+    const usage = { ...prev.usage, [field]: num };
 
-    // -------------------------------
-    // AUTO SYNC: SESSIONS ↔ MONTHLY
-    // -------------------------------
+    // -----------------------------------------------------
+    // ⭐ RESET LOGIC WHEN FIELD IS CLEARED (NO NaN Issues)
+    // -----------------------------------------------------
+    if (value === "") {
+      
+      // If monthly energy L2 is cleared → reset only L2 sessions
+      if (field === "monthlyEnergyLevel2") {
+        usage.dailySessionsLevel2 = 0;
+        usage.monthlySessionsLevel2 = 0;
+        usage.monthlyEnergyLevel2 = 0;
+        // ❌ DO NOT RESET usage.avgEnergyLevel2
+        return { ...prev, usage };
+      }
+
+      // If monthly energy L3 is cleared → reset only L3 sessions
+      if (field === "monthlyEnergyLevel3") {
+        usage.dailySessionsLevel3 = 0;
+        usage.monthlySessionsLevel3 = 0;
+        usage.monthlyEnergyLevel3 = 0;
+        // ❌ DO NOT RESET usage.avgEnergyLevel3
+        return { ...prev, usage };
+      }
+
+      // Generic reset for other session/energy fields
+      if (field.includes("Level2")) {
+        usage.dailySessionsLevel2 ||= 0;
+        usage.monthlySessionsLevel2 ||= 0;
+        usage.monthlyEnergyLevel2 ||= 0;
+      }
+
+      if (field.includes("Level3")) {
+        usage.dailySessionsLevel3 ||= 0;
+        usage.monthlySessionsLevel3 ||= 0;
+        usage.monthlyEnergyLevel3 ||= 0;
+      }
+
+      return { ...prev, usage };
+    }
+
+    // -----------------------------------------------------
+    // ⭐ AUTO SYNC: DAILY ↔ MONTHLY SESSIONS
+    // -----------------------------------------------------
 
     // ---- LEVEL 2 ----
     if (field === "dailySessionsLevel2") {
@@ -233,9 +222,9 @@ const updateUsage = (field, value) => {
       usage.dailySessionsLevel3 = Number((num / 30).toFixed(2));
     }
 
-    // ------------------------------------------
-    // MONTHLY ENERGY → SESSIONS (if AVG exists)
-    // ------------------------------------------
+    // -----------------------------------------------------
+    // ⭐ MONTHLY ENERGY → CALCULATE SESSIONS (if AVG exists)
+    // -----------------------------------------------------
 
     // LEVEL 2
     if (field === "monthlyEnergyLevel2") {
@@ -263,9 +252,9 @@ const updateUsage = (field, value) => {
       }
     }
 
-    // ------------------------------------------
-    // DAILY SESSIONS + AVG ENERGY → MONTHLY ENERGY
-    // ------------------------------------------
+    // -----------------------------------------------------
+    // ⭐ DAILY SESSIONS + AVG → MONTHLY ENERGY
+    // -----------------------------------------------------
 
     // LEVEL 2
     if (field === "dailySessionsLevel2" || field === "avgEnergyLevel2") {
@@ -273,8 +262,7 @@ const updateUsage = (field, value) => {
       const avg = usage.avgEnergyLevel2 || 0;
 
       if (daily > 0 && avg > 0) {
-        const dailyEnergy = daily * avg;
-        usage.monthlyEnergyLevel2 = Math.round(dailyEnergy * 30);
+        usage.monthlyEnergyLevel2 = Math.round(daily * avg * 30);
       }
     }
 
@@ -284,14 +272,13 @@ const updateUsage = (field, value) => {
       const avg = usage.avgEnergyLevel3 || 0;
 
       if (daily > 0 && avg > 0) {
-        const dailyEnergy = daily * avg;
-        usage.monthlyEnergyLevel3 = Math.round(dailyEnergy * 30);
+        usage.monthlyEnergyLevel3 = Math.round(daily * avg * 30);
       }
     }
 
-    // ------------------------------------------
-    // AVG ENERGY CHANGE → RECALC SESSIONS
-    // ------------------------------------------
+    // -----------------------------------------------------
+    // ⭐ AVG ENERGY CHANGE → RECALCULATE SESSIONS
+    // -----------------------------------------------------
 
     // LEVEL 2
     if (field === "avgEnergyLevel2" && usage.monthlyEnergyLevel2 > 0) {
@@ -311,14 +298,15 @@ const updateUsage = (field, value) => {
       usage.monthlySessionsLevel3 = Math.round(dailySessions * 30);
     }
 
-    // ------------------------------------------
-    // ⭐ AUTO-CALCULATE AVG ENERGY (NEW CODE)
-    // ------------------------------------------
+    // -----------------------------------------------------
+    // ⭐ AUTO-CALCULATE AVG ENERGY (EXCEPT WHEN FIELD CLEARED)
+    // -----------------------------------------------------
 
     // LEVEL 2
     if (
       usage.monthlyEnergyLevel2 > 0 &&
-      usage.monthlySessionsLevel2 > 0
+      usage.monthlySessionsLevel2 > 0 &&
+      field !== "monthlyEnergyLevel2" // <— DO NOT RECALC if clearing
     ) {
       usage.avgEnergyLevel2 = Number(
         (usage.monthlyEnergyLevel2 / usage.monthlySessionsLevel2).toFixed(2)
@@ -328,7 +316,8 @@ const updateUsage = (field, value) => {
     // LEVEL 3
     if (
       usage.monthlyEnergyLevel3 > 0 &&
-      usage.monthlySessionsLevel3 > 0
+      usage.monthlySessionsLevel3 > 0 &&
+      field !== "monthlyEnergyLevel3"
     ) {
       usage.avgEnergyLevel3 = Number(
         (usage.monthlyEnergyLevel3 / usage.monthlySessionsLevel3).toFixed(2)
@@ -338,6 +327,8 @@ const updateUsage = (field, value) => {
     return { ...prev, usage };
   });
 };
+
+
 
 
 
@@ -365,7 +356,7 @@ const updateUsage = (field, value) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-        
+        {/* Conditional Render of teh from */}
           <div className="grid md:grid-cols-2 gap-6">
 
   {/* LEVEL 2 RATE */}
@@ -382,7 +373,7 @@ const updateUsage = (field, value) => {
         className="mt-1"
       />
       <p className="text-sm text-slate-500 mt-1">
-        Typical range: {getCurrencySymbol()}0.20 - {getCurrencySymbol()}0.35
+        Typical range: {getCurrencySymbol()}11 - {getCurrencySymbol()}16
       </p>
     </div>
   )}
@@ -401,7 +392,7 @@ const updateUsage = (field, value) => {
         className="mt-1"
       />
       <p className="text-sm text-slate-500 mt-1">
-        Typical range: {getCurrencySymbol()}0.35 - {getCurrencySymbol()}0.60
+        Typical range: {getCurrencySymbol()}14 - {getCurrencySymbol()}20
       </p>
     </div>
   )}

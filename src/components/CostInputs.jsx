@@ -1,4 +1,4 @@
-import React,{useState} from "react";
+import React,{useEffect, useState} from "react";
 import {
   Card,
   CardContent,
@@ -13,20 +13,81 @@ import { Plug, Wrench, Zap, Building } from "lucide-react";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useChargerType } from "@/contexts/ChargerTypeContext";
 
-const CostInputs = ({ costData, setCostData }) => {
+const CostInputs = ({ costData, setCostData,isAutofill,setIsAutofill }) => {
   const { getCurrencySymbol, formatCurrencyInput, convertInputToUSD } =
     useCurrency();
-  const updateCostData = (category, field, value) => {
-    const usdValue = convertInputToUSD(parseFloat(value) || 0);
+    const revenueOptions = [
+  { label: "Revenue Share (%)", value: "percentage" },
+  { label: "Revenue Share per kWh", value: "perKwh" }
+];
+const [revenueType, setRevenueType] = useState("percentage");
+useEffect(() => {
+  // Sync UI dropdown with parent costData value
+  setRevenueType(costData.operating.revenueType);
+}, [costData?.operating?.revenueType]);
+  // const updateCostData = (category, field, value) => {
+  //   const usdValue = convertInputToUSD(parseFloat(value) || 0);
+  //   setCostData((prev) => ({
+  //     ...prev,
+  //     [category]: {
+  //       ...prev[category],
+  //       [field]: usdValue,
+  //     },
+  //   }));
+  // };
+ const updateCostData = (category, field, value) => {
+  // IF field is revenueType -> save as STRING
+  if (field === "revenueType") {
     setCostData((prev) => ({
       ...prev,
       [category]: {
         ...prev[category],
-        [field]: usdValue,
+        [field]: value,  // KEEP STRING
       },
     }));
-  };
-const { chargerType, setChargerType } = useChargerType();
+    return;
+  }
+
+  // If numeric -> convert
+  const usdValue = convertInputToUSD(parseFloat(value) || 0);
+
+  setCostData((prev) => ({
+    ...prev,
+    [category]: {
+      ...prev[category],
+      [field]: usdValue,
+    },
+  }));
+};
+
+  console.log("Cost Data in CostInput",costData);
+ 
+  const { chargerType, setChargerType } = useChargerType();
+
+useEffect(() => {
+  // ⛔ Do NOT auto-switch when user types manually.
+  if (!isAutofill) return;
+
+  if (!costData?.equipment) return;
+
+  const l2 = costData.equipment.level2Chargers?.quantity || 0;
+  const l3 = costData.equipment.level3Chargers?.quantity || 0;
+
+  if (l2 > 0 && l3 > 0) {
+    setChargerType("both");
+  } else if (l2 > 0) {
+    setChargerType("level2");
+  } else if (l3 > 0) {
+    setChargerType("level3");
+  } else {
+    setChargerType("level2");
+  }
+
+  // After auto-selecting ONCE, disable autofill mode
+  setIsAutofill(false);
+
+}, [costData, isAutofill]);
+
 
   // const updateEquipmentData = (type, field, value) => {
   //   const usdValue =
@@ -384,6 +445,9 @@ const updateEquipmentData = (type, field, value) => {
                 }
                 className="mt-1"
               />
+               <p className="text-sm text-slate-500 mt-1">
+        Typical Cost: {getCurrencySymbol()}4 - {getCurrencySymbol()}11
+      </p>
             </div>
             <div>
               <Label htmlFor="maintenance">
@@ -444,6 +508,57 @@ const updateEquipmentData = (type, field, value) => {
                 }
                 className="mt-1"
               />
+            </div>
+            <div>
+             <div className="space-y-2">
+
+
+  {/* Modern Card Container */}
+  <div className="flex">
+    {/* Dropdown */}
+   <select
+  className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-black/30 focus:outline-none transition"
+  value={revenueType}
+  onChange={(e) => {
+    const value = e.target.value;
+    setRevenueType(value);  // UI state
+    updateCostData("operating", "revenueType", value);  // IMPORTANT FIX
+  }}
+>
+  <option value="percentage">Revenue Share (%)</option>
+  <option value="perKwh">Revenue Share per kWh</option>
+</select>
+
+
+    {/* Conditional Input */}
+    {revenueType === "percentage" && (
+      <input
+        type="number"
+        placeholder="Enter Percentage (%)"
+        className="w-full border rounded-lg px-3 mx-2 py-2 text-sm focus:ring-2 focus:ring-black/30 focus:outline-none transition"
+        value={costData.operating.revenuePercentage || ""}
+        onChange={(e) =>
+          updateCostData("operating", "revenuePercentage", e.target.value)
+        }
+      />
+    )}
+
+   {revenueType === "perKwh" && (
+  <input
+    type="number"
+    placeholder={`Enter Amount (${getCurrencySymbol()}/kWh)`}
+    className="w-full border rounded-lg mx-2 px-3 py-2 text-sm focus:ring-2 focus:ring-black/30 focus:outline-none transition"
+    value={costData.operating.revenuePerKwh || ""}
+    onChange={(e) => {
+      updateCostData("operating", "revenueType", "perKwh");  // AUTO UPDATE
+      updateCostData("operating", "revenuePerKwh", e.target.value);
+    }}
+  />
+)}
+
+  </div>
+</div>
+
             </div>
           </div>
         </CardContent>

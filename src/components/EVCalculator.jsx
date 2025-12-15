@@ -14,17 +14,29 @@ import CostInputs from "./CostInputs";
 import RevenueInputs from "./RevenueInputs";
 import ROIResults from "./ROIResults";
 import CurrencySelector from "./CurrencySelector";
-import { Calculator, Zap, DollarSign, TrendingUp, ArrowRight, CalculatorIcon } from "lucide-react";
+import {
+  Calculator,
+  Zap,
+  DollarSign,
+  TrendingUp,
+  ArrowRight,
+  CalculatorIcon,
+  BookMarked,
+} from "lucide-react";
 import { getMockCalculation } from "../utils/mockData";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useWallet } from "@/contexts/WalletContext";
 import { useChargerType } from "@/contexts/ChargerTypeContext";
+import { useLocation } from "react-router-dom";
 
 const EVCalculator = () => {
+  const location = useLocation();
+  const project = location.state?.project;
   const { chargerType } = useChargerType();
   const { user, loginWithRedirect, isAuthenticated } = useAuth0();
   const { setWalletBalance } = useWallet();
   const [hasRegistered, setHasRegistered] = useState(false);
+  const [isAutofill, setIsAutofill] = useState(false);
   console.log("Current Usr Details 🫡", user);
   console.log("User is logged In ", isAuthenticated);
   const { formatCurrency } = useCurrency();
@@ -45,67 +57,71 @@ const EVCalculator = () => {
       laborCosts: 0,
     },
     operating: {
-      electricityCostPerKwh: 0.12,
+      electricityCostPerKwh: 0,
       maintenance: 0,
       networkFees: 0,
       insurance: 0,
       landLease: 0,
+      // Revenue Modal 
+       revenueType: "percentage",   // NEW
+    revenuePercentage: 0,        // NEW
+    revenuePerKwh: 0,    
     },
   });
 
+
+  const [projectName, setProjectName] = useState(true);
+
   const [revenueData, setRevenueData] = useState({
     pricing: {
-      level2Rate: 0.25,
-      level3Rate: 0.45,
+      level2Rate: 0,
+      level3Rate: 0,
       membershipFee: 0,
     },
     usage: {
-  dailySessionsLevel2: null,
-  dailySessionsLevel3: null,
-  avgEnergyLevel2: 25,
-  avgEnergyLevel3: 25,
-  avgSessionDuration: 2,
-  growthRate: 0,
-},
+      dailySessionsLevel2: null,
+      dailySessionsLevel3: null,
+      avgEnergyLevel2: 25,
+      avgEnergyLevel3: 25,
+      avgSessionDuration: 2,
+      growthRate: 0,
+    },
     timeline: {
       analysisYears: 5,
     },
   });
 
   const [results, setResults] = useState(null);
-  const [totalInvestments,setTotalInvestment] = useState(null);
+  const [totalInvestments, setTotalInvestment] = useState(null);
   useEffect(() => {
     // Calculate results whenever data changes
     const calculation = getMockCalculation(costData, revenueData);
     setTotalInvestment(calculation);
   }, [costData]);
 
-const isValidForCalculation = () => {
-  const c = costData.equipment;
-  const r = revenueData.usage;
+  const isValidForCalculation = () => {
+    const c = costData.equipment;
+    const r = revenueData.usage;
 
-  // ✅ at least ONE charger type must be valid
-  const level2Valid =
-    c.level2Chargers.quantity > 0 &&
-    c.level2Chargers.unitCost > 0;
+    // ✅ at least ONE charger type must be valid
+    const level2Valid =
+      c.level2Chargers.quantity > 0 && c.level2Chargers.unitCost > 0;
 
-  const level3Valid =
-    c.level3Chargers.quantity > 0 &&
-    c.level3Chargers.unitCost > 0;
+    const level3Valid =
+      c.level3Chargers.quantity > 0 && c.level3Chargers.unitCost > 0;
 
-  const costValid = level2Valid || level3Valid;
+    const costValid = level2Valid || level3Valid;
 
-  // ✅ optional revenue fields (enable only if needed)
-  const revenueValid =
-    r.dailySessionsLevel2 > 0 ||
-    r.dailySessionsLevel3 > 0;
+    // ✅ optional revenue fields (enable only if needed)
+    const revenueValid = r.dailySessionsLevel2 > 0 || r.dailySessionsLevel3 > 0;
 
-  return costValid && revenueValid;
-};
+    return costValid && revenueValid;
+  };
 
-  console.log("Result of calculation",  results?.revenueData?.timeline?.analysisYears);
-
-
+  console.log(
+    "Result of calculation",
+    results?.revenueData?.timeline?.analysisYears
+  );
 
   // ✅ Register user in your backend after Auth0 login
   useEffect(() => {
@@ -140,116 +156,198 @@ const isValidForCalculation = () => {
     registerUser();
   }, [isAuthenticated, user, hasRegistered]);
 
-  console.log("Result data in Ev calculator",results);
-  
+  console.log("Result data in Ev calculator", results);
 
-const handleNext = () => {
-  const { equipment, operating } = costData;
+  const handleNext = () => {
+    const { equipment, operating } = costData;
 
-  const l2Qty = equipment.level2Chargers.quantity;
-  const l2Cost = equipment.level2Chargers.unitCost;
+    const l2Qty = equipment.level2Chargers.quantity;
+    const l2Cost = equipment.level2Chargers.unitCost;
 
-  const l3Qty = equipment.level3Chargers.quantity;
-  const l3Cost = equipment.level3Chargers.unitCost;
+    const l3Qty = equipment.level3Chargers.quantity;
+    const l3Cost = equipment.level3Chargers.unitCost;
 
-  const electricity = operating.electricityCostPerKwh;
+    const electricity = operating.electricityCostPerKwh;
 
-  // Electricity cost validation (common)
-  if (!electricity || electricity <= 0) {
-    alert("❌ Electricity Cost per kWh must be greater than 0.");
-    return;
-  }
-   console.log("chargerType",chargerType);
-   
-  // ========== LEVEL 2 ==========  
-  if (chargerType === "level2") {
-    if (l2Qty <= 0) {
-      alert("❌ Please enter Level 2 charger quantity greater than 0.");
+    // Electricity cost validation (common)
+    if (!electricity || electricity <= 0) {
+      alert("❌ Electricity Cost per kWh must be greater than 0.");
       return;
     }
-    if (l2Cost <= 0) {
-      alert("❌ Level 2 charger unit cost must be greater than 0.");
-      return;
-    }
-  }
+    console.log("chargerType", chargerType);
 
-  // ========== LEVEL 3 ==========
-  if (chargerType === "level3") {
-    if (l3Qty <= 0) {
-      alert("❌ Please enter Level 3 charger quantity greater than 0.");
-      return;
+    // ========== LEVEL 2 ==========
+    if (chargerType === "level2") {
+      if (l2Qty <= 0) {
+        alert("❌ Please enter Level 2 charger quantity greater than 0.");
+        return;
+      }
+      if (l2Cost <= 0) {
+        alert("❌ Level 2 charger unit cost must be greater than 0.");
+        return;
+      }
     }
-    if (l3Cost <= 0) {
-      alert("❌ Level 3 charger unit cost must be greater than 0.");
-      return;
+
+    // ========== LEVEL 3 ==========
+    if (chargerType === "level3") {
+      if (l3Qty <= 0) {
+        alert("❌ Please enter Level 3 charger quantity greater than 0.");
+        return;
+      }
+      if (l3Cost <= 0) {
+        alert("❌ Level 3 charger unit cost must be greater than 0.");
+        return;
+      }
     }
-  }
 
-  // ========== BOTH ==========
-  if (chargerType === "both") {
-    if (l2Qty <= 0 || l3Qty <= 0) {
-      alert("❌ Both Level 2 and Level 3 charger quantities must be > 0.");
-      return;
+    // ========== BOTH ==========
+    if (chargerType === "both") {
+      if (l2Qty <= 0 || l3Qty <= 0) {
+        alert("❌ Both Level 2 and Level 3 charger quantities must be > 0.");
+        return;
+      }
+      if (l2Cost <= 0 || l3Cost <= 0) {
+        alert("❌ Both Level 2 and Level 3 charger unit costs must be > 0.");
+        return;
+      }
     }
-    if (l2Cost <= 0 || l3Cost <= 0) {
-      alert("❌ Both Level 2 and Level 3 charger unit costs must be > 0.");
-      return;
-    }
-  }
 
-  // If all good
-  console.log("✔ Validation passed", costData);
-  // go to next step...
-  setActiveTab("revenue")
-};
-
-
+    // If all good
+    console.log("✔ Validation passed", costData);
+    // go to next step...
+    setActiveTab("revenue");
+  };
 
   const handleShowResultClick = async () => {
-  try {
-    const userID = user?.sub
-    const payload = {
-      user_id: userID,
-      amount: 1,
-    };
+    try {
+      const userID = user?.sub;
+      const payload = {
+        user_id: userID,
+        amount: 1,
+      };
 
-    const res = await fetch(`${process.env.REACT_APP_BASE_URL}/api/v1/user/deduct`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch(
+        `${process.env.REACT_APP_BASE_URL}/api/v1/user/deduct`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
-    if (!res.ok) throw new Error("Deduction Failed");
-const data = await res.json();
-      console.log("data after deduction",data);
-      
-    // ✅ update global balance
-    setWalletBalance(data.remainingCredit);
+      if (!res.ok) throw new Error("Deduction Failed");
+      const data = await res.json();
+      console.log("data after deduction", data);
 
-    alert(`₹${payload.amount} deducted!`);
-    // ✅ Continue only when API success
-    console.log("-----------------------");
-    
-    console.log("Cost Data",costData);
-    console.log("Revenue Data",revenueData);
-    
-    console.log("-----------------------");
-    
-    const calculation = getMockCalculation(costData, revenueData);
-    setResults(calculation);
+      // ✅ update global balance
+      setWalletBalance(data.remainingCredit);
+
+      alert(`₹${payload.amount} deducted!`);
+      // ✅ Continue only when API success
+      console.log("-----------------------");
+
+      console.log("Cost Data", costData);
+      console.log("Revenue Data", revenueData);
+
+      console.log("-----------------------");
+
+      const calculation = getMockCalculation(costData, revenueData);
+      setResults(calculation);
+      setActiveTab("results");
+    } catch (error) {
+      console.error(error);
+      alert("Payment/Deduction failed. Try again!");
+    }
+  };
+
+  // useEffect(() => {
+  //   if (!project) return;
+
+  //   console.log("📌 Loading project into form", project);
+
+  //   // Prefill Cost
+  //   if (project.userInputCost) {
+  //     setCostData(project.userInputCost);
+  //   }
+
+  //   // Prefill Revenue
+  //   if (project.userInputRevenue) {
+  //     setRevenueData(project.userInputRevenue);
+  //   }
+
+  //   // Auto-calc results
+  //   const calc = getMockCalculation(project.userInputCost, project.userInputRevenue);
+  //   setResults(calc);
+  //   setActiveTab("results");  // Jump to result tab automatically
+  // }, [project]);
+
+  useEffect(() => {
+    if (!project) return;
+
+    setIsAutofill(true); // ⭐ Mark that autofill is happening
+
+    if (project.userInputCost) {
+      setCostData(project.userInputCost);
+    }
+
+    if (project.userInputRevenue) {
+      setRevenueData(project.userInputRevenue);
+    }
+
+    const calc = getMockCalculation(
+      project.userInputCost,
+      project.userInputRevenue
+    );
+    setResults(calc);
     setActiveTab("results");
-  } catch (error) {
-    console.error(error);
-    alert("Payment/Deduction failed. Try again!");
+  }, [project]);
+  const handleNewProject = () => {
+    setResults(null)
+    setCostData({
+    equipment: {
+      level2Chargers: { quantity: 0, unitCost: 0 },
+      level3Chargers: { quantity: 0, unitCost: 0 },
+      transformer: 0,
+      electricalInfrastructure: 0,
+      networkingSoftware: 0,
+    },
+    installation: {
+      sitePreperation: 0,
+      electricalInstallation: 0,
+      permits: 0,
+      laborCosts: 0,
+    },
+    operating: {
+      electricityCostPerKwh: 0,
+      maintenance: 0,
+      networkFees: 0,
+      insurance: 0,
+      landLease: 0,
+    },
+  })
+  setRevenueData({
+    pricing: {
+      level2Rate: 0,
+      level3Rate: 0,
+      membershipFee: 0,
+    },
+    usage: {
+      dailySessionsLevel2: null,
+      dailySessionsLevel3: null,
+      avgEnergyLevel2: 25,
+      avgEnergyLevel3: 25,
+      avgSessionDuration: 2,
+      growthRate: 0,
+    },
+    timeline: {
+      analysisYears: 5,
+    },
+  })
   }
-};
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-slate-900 mb-2">
@@ -261,8 +359,37 @@ const data = await res.json();
             decisions.
           </p>
         </div>
+        {projectName && (
+<div className=" px-4 py-4 flex justify-between items-center bg-green-100 text-black">
+          <div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+            <span className="text-xl font-bold flex items-center mb-1">
+              <span>
+                <BookMarked />
+              </span>
+              <span className="ml-2">Project: {project?.project_name}</span>
+            </span>
+         
+          </div>
+          <div>
+{/* RIGHT SIDE — BUTTON */}
+  <button
+    onClick={handleNewProject}
+    className="bg-green-600 hover:bg-green-700 flex text-white px-4 py-2 rounded-lg shadow"
+  >
+    <span>
+     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus-corner-icon lucide-file-plus-corner"><path d="M11.35 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v5.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M14 19h6"/><path d="M17 16v6"/></svg>
+    </span>
+    <span className="ml-2 font-medium">
+    New Project
+    </span>
+  </button>
+          </div>
+           
+        </div>
+        )}
+        
+        <div className="grid lg:grid-cols-3 gap-8 border-[1px] border-slate-200 p-6 rounded-lg shadow-sm bg-white">
           <div className="lg:col-span-2">
             <Tabs
               value={activeTab}
@@ -270,7 +397,10 @@ const data = await res.json();
               className="w-full"
             >
               <TabsList className="flex justify-between grid-cols-3 mb-6">
-                <TabsTrigger value="costs" className="flex w-[50%] items-center gap-2">
+                <TabsTrigger
+                  value="costs"
+                  className="flex w-[50%] items-center gap-2"
+                >
                   <Calculator className="h-4 w-4" />
                   Costs
                 </TabsTrigger>
@@ -291,19 +421,23 @@ const data = await res.json();
               </TabsList>
 
               <TabsContent value="costs" className="space-y-6">
-                <CostInputs costData={costData} setCostData={setCostData} />
+                <CostInputs
+                  costData={costData}
+                  setCostData={setCostData}
+                  isAutofill={isAutofill}
+                  setIsAutofill={setIsAutofill}
+                />
                 {/* NEXT BUTTON */}
                 <div className="flex justify-end">
-                <Button
-  // onClick={() => setActiveTab("revenue")}
-  onClick={handleNext}
-  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg 
+                  <Button
+                    // onClick={() => setActiveTab("revenue")}
+                    onClick={handleNext}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg 
              shadow-md hover:shadow-xl transition-all duration-300 flex items-center gap-2"
->
-  Next 
-  <ArrowRight className="w-4 h-4" />
-</Button>
-
+                  >
+                    Next
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
                 </div>
               </TabsContent>
 
@@ -328,24 +462,22 @@ const data = await res.json();
                    <CalculatorIcon /> Calculate & Show Result
                   </Button> */}
                   <Button
-  // disabled={!isValidForCalculation()}
-  onClick={handleShowResultClick}
-  // className={`text-white ${
-  //   !isValidForCalculation()
-  //     ? "bg-gray-400 cursor-not-allowed"
-  //     : "bg-green-700"
-  // }`}
-  className="bg-green-600 text-white"
->
-  <CalculatorIcon /> Calculate & Show Result
-</Button>
-
+                    // disabled={!isValidForCalculation()}
+                    onClick={handleShowResultClick}
+                    // className={`text-white ${
+                    //   !isValidForCalculation()
+                    //     ? "bg-gray-400 cursor-not-allowed"
+                    //     : "bg-green-700"
+                    // }`}
+                    className="bg-green-600 text-white"
+                  >
+                    <CalculatorIcon /> Calculate & Show Result
+                  </Button>
                 </div>
               </TabsContent>
 
               <TabsContent value="results" className="space-y-6">
                 <ROIResults results={results} />
-               
               </TabsContent>
             </Tabs>
           </div>
@@ -361,19 +493,17 @@ const data = await res.json();
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Update the logic where we are changing the investment */}
-               {
-                totalInvestments && (
-  <div className="bg-amber-50 p-4 rounded-lg">
-                      <div className="text-sm text-amber-600 font-medium">
-                        Total Investment
-                      </div>
-                      <div className="text-2xl font-bold text-amber-700">
-                        {formatCurrency(totalInvestments.totalInvestment)}
-                      </div>
+                {totalInvestments && (
+                  <div className="bg-amber-50 p-4 rounded-lg">
+                    <div className="text-sm text-amber-600 font-medium">
+                      Total Investment
                     </div>
-                )
-               } 
-             
+                    <div className="text-2xl font-bold text-amber-700">
+                      {formatCurrency(totalInvestments.totalInvestment)}
+                    </div>
+                  </div>
+                )}
+
                 {results && (
                   <>
                     <div className="bg-emerald-50 p-4 rounded-lg">
@@ -381,7 +511,7 @@ const data = await res.json();
                         ROI
                       </div>
                       <div className="text-2xl font-bold text-emerald-700">
-                       {results.roi?.toFixed(2)}%
+                        {results.roi?.toFixed(2)}%
                       </div>
                     </div>
                     <div className="bg-fuchsia-50 p-4 rounded-lg">
@@ -389,7 +519,11 @@ const data = await res.json();
                         Annual ROI
                       </div>
                       <div className="text-2xl font-bold text-fuchsia-600">
-                     {(results.roi / results?.revenueData?.timeline?.analysisYears).toFixed(2)}%
+                        {(
+                          results.roi /
+                          results?.revenueData?.timeline?.analysisYears
+                        ).toFixed(2)}
+                        %
                       </div>
                     </div>
                     <div className="bg-blue-50 p-4 rounded-lg">
@@ -397,14 +531,14 @@ const data = await res.json();
                         Payback Period
                       </div>
                       <div className="text-2xl font-bold text-blue-700">
-                      {results.paybackPeriod.toFixed(1)} years
-
+                        {results.paybackPeriod.toFixed(1)} years
                       </div>
                     </div>
-                  
+
                     <div className="bg-purple-50 p-4 rounded-lg">
                       <div className="text-sm text-purple-600 font-medium">
-                        {results?.revenueData?.timeline?.analysisYears}-Year Profit
+                        {results?.revenueData?.timeline?.analysisYears}-Year
+                        Profit
                       </div>
                       <div className="text-2xl font-bold text-purple-700">
                         {formatCurrency(results.fiveYearProfit)}
@@ -414,7 +548,6 @@ const data = await res.json();
                 )}
               </CardContent>
             </Card>
-            
           </div>
         </div>
       </main>

@@ -1,115 +1,3 @@
-// import React, { createContext, useContext, useState } from 'react';
-
-// // Mock exchange rates (in production, this would come from a real API)
-// const EXCHANGE_RATES = {
-//   INR: 1.0,
-//   USD: 1.0,
-//   EUR: 1.0,
-//   GBP: 1.0,
-// };
-
-// const CURRENCY_SYMBOLS = {
-//   INR:'₹',
-//   USD: '$',
-//   EUR: '€',
-//   GBP: '£',
-// };
-
-// const CURRENCY_NAMES = {
-//   INR:'Indian Rupee',
-//   USD: 'US Dollar',
-//   EUR: 'Euro',
-//   GBP: 'British Pound',
-// };
-
-// const CurrencyContext = createContext();
-
-// export const useCurrency = () => {
-//   const context = useContext(CurrencyContext);
-//   if (!context) {
-//     throw new Error('useCurrency must be used within a CurrencyProvider');
-//   }
-//   return context;
-// };
-
-// export const CurrencyProvider = ({ children }) => {
-//   const [currency, setCurrency] = useState('INR');
-
-//   const convertAmount = (amount, fromCurrency = 'INR', toCurrency = currency) => {
-//     if (fromCurrency === toCurrency) return amount;
-    
-//     // Convert to USD first, then to target currency
-//     const usdAmount = amount / EXCHANGE_RATES[fromCurrency];
-//     return usdAmount * EXCHANGE_RATES[toCurrency];
-//   };
-
-//   const formatCurrency = (amount, currencyCode = currency, showCode = false) => {
-//     const symbol = CURRENCY_SYMBOLS[currencyCode];
-//     const convertedAmount = convertAmount(amount, 'INR', currencyCode);
-    
-//     let formattedNumber;
-//     if (currencyCode === 'JPY') {
-//       formattedNumber = Math.round(convertedAmount).toLocaleString();
-//     } else {
-//       formattedNumber = convertedAmount.toLocaleString("en-IN", {
-//         minimumFractionDigits: 0,
-//         maximumFractionDigits: 0
-//       });
-//     }
-    
-//     if (showCode) {
-//       return `${symbol}${formattedNumber} ${currencyCode}`;
-//     }
-    
-//     return `${symbol}${formattedNumber}`;
-//   };
-
-  
-
-
-//   const formatCurrencyInput = (amount, currencyCode = currency) => {
-//     return convertAmount(amount, 'INR', currencyCode);
-//   };
-
-//   const convertInputToUSD = (amount, fromCurrency = currency) => {
-//     return convertAmount(amount, fromCurrency, 'INR');
-//   };
-
-//   const getCurrencySymbol = (currencyCode = currency) => {
-//     return CURRENCY_SYMBOLS[currencyCode];
-//   };
-
-//   const getCurrencyName = (currencyCode = currency) => {
-//     return CURRENCY_NAMES[currencyCode];
-//   };
-
-//   const getAvailableCurrencies = () => {
-//     return Object.keys(CURRENCY_SYMBOLS).map(code => ({
-//       code,
-//       name: CURRENCY_NAMES[code],
-//       symbol: CURRENCY_SYMBOLS[code]
-//     }));
-//   };
-
-//   return (
-//     <CurrencyContext.Provider
-//       value={{
-//         currency,
-//         setCurrency,
-//         convertAmount,
-//         formatCurrency,
-//         formatCurrencyInput,
-//         convertInputToUSD,
-//         getCurrencySymbol,
-//         getCurrencyName,
-//         getAvailableCurrencies,
-//         exchangeRates: EXCHANGE_RATES
-//       }}
-//     >
-//       {children}
-//     </CurrencyContext.Provider>
-//   );
-// }; 
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
@@ -138,68 +26,154 @@ export const useCurrency = () => {
 };
 
 // ✅ Fetch exchange rates dynamically
-const getExchangeRates = async (base = 'INR') => {
-  const apiKey = '05369c033ec2e8d3c45f5087569d39cd';
+// const getExchangeRates = async () => {
+//   try {
+//     const res = await fetch("https://v6.exchangerate-api.com/v6/0821a9820552888a7ea9ba9c/latest/INR");
+//     const data = await res.json();
+
+//     if (data.result !== "success") throw new Error("Failed to load rates");
+
+//     const numericRates = {};
+//     for (let key in data.conversion_rates) {
+//       numericRates[key] = Number(data.conversion_rates[key]); // convert to number
+//     }
+
+//     return numericRates; 
+//   } catch (err) {
+//     console.error("Exchange Rate API error:", err);
+//     return null;
+//   }
+// };
+const EXCHANGE_RATE_KEY = "exchange_rates_inr";
+const EXCHANGE_RATE_TIME_KEY = "exchange_rates_time";
+const ONE_DAY = 24 * 60 * 60 * 1000;
+
+const getExchangeRates = async () => {
   try {
-    const response = await fetch(
-      `https://api.exchangerate.host/live?access_key=05369c033ec2e8d3c45f5087569d39cd`,
-      {
-        headers: { apikey: apiKey },
+    // 1️⃣ Check cache
+    const cachedRates = localStorage.getItem(EXCHANGE_RATE_KEY);
+    const cachedTime = localStorage.getItem(EXCHANGE_RATE_TIME_KEY);
+
+    if (cachedRates && cachedTime) {
+      const isExpired = Date.now() - Number(cachedTime) > ONE_DAY;
+
+      if (!isExpired) {
+        return JSON.parse(cachedRates); // ✅ use cache
       }
-    );
-
-    const data = await response.json();
-
-    if (!data || data.success === false) {
-      throw new Error(data.error?.info || 'Failed to fetch exchange rates');
     }
 
-    return data.rates; // e.g., { USD: 0.012, EUR: 0.011, GBP: 0.0096 }
-  } catch (error) {
-    console.error('Error fetching exchange rates:', error.message);
+    // 2️⃣ Fetch from API (only when expired)
+    const res = await fetch(
+      "https://v6.exchangerate-api.com/v6/0821a9820552888a7ea9ba9c/latest/INR"
+    );
+
+    const data = await res.json();
+    if (data.result !== "success") throw new Error("Failed to load rates");
+
+    const numericRates = {};
+    for (let key in data.conversion_rates) {
+      numericRates[key] = Number(data.conversion_rates[key]);
+    }
+
+    // 3️⃣ Save to cache
+    localStorage.setItem(EXCHANGE_RATE_KEY, JSON.stringify(numericRates));
+    localStorage.setItem(EXCHANGE_RATE_TIME_KEY, Date.now().toString());
+
+    return numericRates;
+  } catch (err) {
+    console.error("Exchange Rate API error:", err);
     return null;
   }
 };
 
+
+
 export const CurrencyProvider = ({ children }) => {
   const [currency, setCurrency] = useState('INR');
-  const [exchangeRates, setExchangeRates] = useState({
-    INR:88.728999,
-    USD: 1.0,
-    EUR: 0.86058,
-    GBP: 0.760115,
-  });
+ const [exchangeRates, setExchangeRates] = useState({
+  INR: 1,  // default base
+});
 
-  // ✅ Fetch rates when component mounts
-  useEffect(() => {
-    const fetchRates = async () => {
-      const rates = await getExchangeRates('INR');
-      if (rates) setExchangeRates({ ...rates, INR: 1.0 }); // Ensure INR stays base 1.0
-    };
-    fetchRates();
-  }, []);
+useEffect(() => {
+  const fetchRates = async () => {
+    const rates = await getExchangeRates();
+    if (rates) {
+      setExchangeRates({
+        ...rates,
+        INR: 1, // ensure base INR = 1
+      });
+    }
+  };
+  fetchRates();
+}, []);
+
 
   // ✅ Convert between currencies
-  const convertAmount = (amount, fromCurrency = 'INR', toCurrency = currency) => {
-    if (fromCurrency === toCurrency) return amount;
+  // const convertAmount = (amount, fromCurrency = 'INR', toCurrency = currency) => {
+  //   if (fromCurrency === toCurrency) return amount;
 
-    const inBase = amount / exchangeRates[fromCurrency]; // convert to INR first
-    return inBase * exchangeRates[toCurrency];
-  };
+  //   const inBase = amount / exchangeRates[fromCurrency]; // convert to INR first
+  //   return inBase * exchangeRates[toCurrency];
+  // };
+const convertAmount = (amount, fromCurrency = "INR", toCurrency = currency) => {
+  amount = Number(amount) || 0;
 
-  const formatCurrency = (amount, currencyCode = currency, showCode = false) => {
-    const symbol = CURRENCY_SYMBOLS[currencyCode];
-    const convertedAmount = convertAmount(amount, 'INR', currencyCode);
+  const fromRate = exchangeRates[fromCurrency]; // e.g. INR = 1
+  const toRate = exchangeRates[toCurrency];     // e.g. USD = 0.01106
 
-    const formattedNumber = convertedAmount.toLocaleString('en-IN', {
+  if (!fromRate || !toRate) return 0;
+
+  // convert to INR first
+  const amountInINR = fromCurrency === "INR" ? amount : amount / fromRate;
+
+  // convert INR → target currency
+  return amountInINR * toRate;
+};
+
+const CURRENCY_LOCALE = {
+  INR: "en-IN",
+  USD: "en-US",
+  EUR: "de-DE",
+  GBP: "en-GB",
+};
+
+const formatCurrency = (amount, currencyCode = currency) => {
+  const converted = convertAmount(amount, "INR", currencyCode);
+  const safe = Number(converted) || 0;
+
+  return safe.toLocaleString(
+    CURRENCY_LOCALE[currencyCode] || "en-IN",
+    {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    });
+    }
+  );
+};
+// Working code 
+// const formatCurrency = (amount, currencyCode = currency) => {
+//   const converted = convertAmount(amount, "INR", currencyCode);
+//   const safe = Number(converted) || 0;
 
-    return showCode
-      ? `${formattedNumber} ${currencyCode}`
-      : `${formattedNumber}`;
-  };
+//   return safe.toLocaleString("en-IN", {
+//     minimumFractionDigits: 0,
+//     maximumFractionDigits: 0,
+//   });
+// };
+
+
+  // const formatCurrency = (amount, currencyCode = currency, showCode = false) => {
+  //   const symbol = CURRENCY_SYMBOLS[currencyCode];
+  //   const convertedAmount = convertAmount(amount, 'INR', currencyCode);
+
+  //   const formattedNumber = convertedAmount.toLocaleString('en-IN', {
+  //     minimumFractionDigits: 0,
+  //     maximumFractionDigits: 0,
+  //   });
+
+  //   return showCode
+  //     ? `${formattedNumber} ${currencyCode}`
+  //     : `${formattedNumber}`;
+  // };
 
   const formatCurrencyInput = (amount, currencyCode = currency) =>
     convertAmount(amount, 'INR', currencyCode);

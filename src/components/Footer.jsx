@@ -6,10 +6,10 @@ const Footer = () => {
       
       {/* Address + Contact */}
       <div className="text-center space-y-2">
-        <p className="text-sm">
+        {/* <p className="text-sm">
           Regus, Plot No.22, TOWER-2, Assotech Business Cresterra,  
           Sector-135, Noida, UP 201301
-        </p>
+        </p> */}
         <p className="text-sm font-medium">
           📞 1800-843-6467 •  ✉  info@chargecity.co
         </p>

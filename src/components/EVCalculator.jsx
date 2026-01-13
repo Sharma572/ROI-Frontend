@@ -32,6 +32,8 @@ import { useLocation } from "react-router-dom";
 const EVCalculator = () => {
   const location = useLocation();
   const project = location.state?.project;
+  const [costErrors, setCostErrors] = useState({});
+  const [revenueErrors, setRevenueErrors] = useState({});
   const { chargerType } = useChargerType();
   const { user, loginWithRedirect, isAuthenticated } = useAuth0();
   const { setWalletBalance } = useWallet();
@@ -160,65 +162,67 @@ const EVCalculator = () => {
 
   console.log("Result data in Ev calculator", results);
 
-  const handleNext = () => {
-    const { equipment, operating } = costData;
+  // Working Code 
+  // const handleNext = () => {
+  //   const { equipment, operating } = costData;
 
-    const l2Qty = equipment.level2Chargers.quantity;
-    const l2Cost = equipment.level2Chargers.unitCost;
+  //   const l2Qty = equipment.level2Chargers.quantity;
+  //   const l2Cost = equipment.level2Chargers.unitCost;
 
-    const l3Qty = equipment.level3Chargers.quantity;
-    const l3Cost = equipment.level3Chargers.unitCost;
+  //   const l3Qty = equipment.level3Chargers.quantity;
+  //   const l3Cost = equipment.level3Chargers.unitCost;
 
-    const electricity = operating.electricityCostPerKwh;
+  //   const electricity = operating.electricityCostPerKwh;
 
-    // Electricity cost validation (common)
-    if (!electricity || electricity <= 0) {
-      alert("❌ Electricity Cost per kWh must be greater than 0.");
-      return;
-    }
-    console.log("chargerType", chargerType);
+  //   // Electricity cost validation (common)
+  //   if (!electricity || electricity <= 0) {
+  //     setFormError("❌ Electricity Cost per kWh must be greater than 0.");
+  //     return false;
+  //   }
+  //   console.log("chargerType", chargerType);
 
-    // ========== LEVEL 2 ==========
-    if (chargerType === "level2") {
-      if (l2Qty <= 0) {
-        alert("❌ Please enter Level 2 charger quantity greater than 0.");
-        return;
-      }
-      if (l2Cost <= 0) {
-        alert("❌ Level 2 charger unit cost must be greater than 0.");
-        return;
-      }
-    }
+  //   // ========== LEVEL 2 ==========
+  //   if (chargerType === "level2") {
+  //     if (l2Qty <= 0) {
+  //       setFormError("❌ Please enter Level 2 charger quantity greater than 0.");
+  //       return false;
+  //     }
+  //     if (l2Cost <= 0) {
+  //       setFormError("❌ Level 2 charger unit cost must be greater than 0.");
+  //       return false;
+  //     }
+  //   }
 
-    // ========== LEVEL 3 ==========
-    if (chargerType === "level3") {
-      if (l3Qty <= 0) {
-        alert("❌ Please enter Level 3 charger quantity greater than 0.");
-        return;
-      }
-      if (l3Cost <= 0) {
-        alert("❌ Level 3 charger unit cost must be greater than 0.");
-        return;
-      }
-    }
+  //   // ========== LEVEL 3 ==========
+  //   if (chargerType === "level3") {
+  //     if (l3Qty <= 0) {
+  //       setFormError("❌ Please enter Level 3 charger quantity greater than 0.");
+  //       return false;
+  //     }
+  //     if (l3Cost <= 0) {
+  //       setFormError("❌ Level 3 charger unit cost must be greater than 0.");
+  //       return false;
+  //     }
+  //   }
 
-    // ========== BOTH ==========
-    if (chargerType === "both") {
-      if (l2Qty <= 0 || l3Qty <= 0) {
-        alert("❌ Both Level 2 and Level 3 charger quantities must be > 0.");
-        return;
-      }
-      if (l2Cost <= 0 || l3Cost <= 0) {
-        alert("❌ Both Level 2 and Level 3 charger unit costs must be > 0.");
-        return;
-      }
-    }
+  //   // ========== BOTH ==========
+  //   if (chargerType === "both") {
+  //     if (l2Qty <= 0 || l3Qty <= 0) {
+  //       setFormError("❌ Both Level 2 and Level 3 charger quantities must be > 0.");
+  //       return false;
+  //     }
+  //     if (l2Cost <= 0 || l3Cost <= 0) {
+  //       setFormError("❌ Both Level 2 and Level 3 charger unit costs must be > 0.");
+  //       return false;
+  //     }
+  //   }
 
-    // If all good
-    console.log("✔ Validation passed", costData);
-    // go to next step...
-    setActiveTab("revenue");
-  };
+  //   // If all good
+  //   console.log("✔ Validation passed", costData);
+  //   // go to next step...
+  //   // setActiveTab("revenue");
+  //     return true; // ✅ VALID
+  // };
 
   // const handleShowResultClick = async () => {
   //   try {
@@ -254,10 +258,80 @@ const EVCalculator = () => {
   //   setActiveTab("results");  // Jump to result tab automatically
   // }, [project]);
 
+  const handleNext = () => {
+  const { equipment } = costData;
+  const errors = {};
+
+  const l2Qty = equipment.level2Chargers.quantity;
+  const l2Cost = equipment.level2Chargers.unitCost;
+  const l3Qty = equipment.level3Chargers.quantity;
+  const l3Cost = equipment.level3Chargers.unitCost;
+
+  // LEVEL 2
+  if (chargerType === "level2") {
+    if (l2Qty <= 0) errors.level2Qty = "Level 2 quantity required";
+    if (l2Cost <= 0) errors.level2Cost = "Level 2 unit cost required";
+  }
+
+  // LEVEL 3
+  if (chargerType === "level3") {
+    if (l3Qty <= 0) errors.level3Qty = "Level 3 quantity required";
+    if (l3Cost <= 0) errors.level3Cost = "Level 3 unit cost required";
+  }
+
+  // BOTH
+  if (chargerType === "both") {
+    if (l2Qty <= 0) errors.level2Qty = "Level 2 quantity required";
+    if (l2Cost <= 0) errors.level2Cost = "Level 2 unit cost required";
+    if (l3Qty <= 0) errors.level3Qty = "Level 3 quantity required";
+    if (l3Cost <= 0) errors.level3Cost = "Level 3 unit cost required";
+  }
+
+  setCostErrors(errors);
+
+  return Object.keys(errors).length === 0;
+};
+
+const validateRevenue = () => {
+  const errors = {};
+  const { pricing } = revenueData;
+
+  // Level 2 validation
+  if (
+    (chargerType === "level2" || chargerType === "both") &&
+    (!pricing.level2Rate || pricing.level2Rate <= 0)
+  ) {
+    errors.level2Rate = "Level 2 (AC) rate is required";
+  }
+
+  // Level 3 validation
+  if (
+    (chargerType === "level3" || chargerType === "both") &&
+    (!pricing.level3Rate || pricing.level3Rate <= 0)
+  ) {
+    errors.level3Rate = "Level 3 (DC) rate is required";
+  }
+
+  setRevenueErrors(errors);
+
+  return Object.keys(errors).length === 0;
+};
+
+
   const handleShowResultClick = async () => {
   try {
       setIsLoading(true);
-       // Generate unique project name based on date-time
+
+       if (!validateRevenue()) {
+      setIsLoading(false);
+      return;
+    }
+
+// ✅ Clear old errors
+setRevenueErrors({});
+
+    
+    // Generate unique project name based on date-time
     const now = new Date();
     const autoProjectName =
       "Project-" +
@@ -429,7 +503,7 @@ const EVCalculator = () => {
             decisions.
           </p>
         </div>
-        {projectName && (
+        {project?.project_name && projectName && (
 <div className=" px-4 py-4 flex justify-between items-center bg-green-100 text-black">
           <div>
 
@@ -463,7 +537,26 @@ const EVCalculator = () => {
           <div className="lg:col-span-2">
             <Tabs
               value={activeTab}
-              onValueChange={setActiveTab}
+              // onValueChange={setActiveTab}
+              onValueChange={(nextTab) => {
+    // when clicking Revenue tab from Costs
+    if (nextTab === "revenue" && activeTab === "costs") {
+      if (handleNext()) {
+        setActiveTab("revenue");
+      }
+      return;
+    }
+     // 🔴 REVENUE → RESULTS (ADD THIS)
+    if (nextTab === "results" && activeTab === "revenue") {
+      if (validateRevenue()) {
+        setActiveTab("results");
+      }
+      return;
+    }
+
+    // allow all other tab switches
+    setActiveTab(nextTab);
+  }}
               className="w-full"
             >
               <TabsList className="flex justify-between grid-cols-3 mb-6">
@@ -496,12 +589,18 @@ const EVCalculator = () => {
                   setCostData={setCostData}
                   isAutofill={isAutofill}
                   setIsAutofill={setIsAutofill}
+                    errors={costErrors}
+                     setErrors={setCostErrors}   
                 />
                 {/* NEXT BUTTON */}
                 <div className="flex justify-end">
                   <Button
-                    // onClick={() => setActiveTab("revenue")}
-                    onClick={handleNext}
+                    // onClick={handleNext}
+                     onClick={() => {
+    if (handleNext()) {
+      setActiveTab("revenue");
+    }
+  }}
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg 
              shadow-md hover:shadow-xl transition-all duration-300 flex items-center gap-2"
                   >
@@ -515,6 +614,8 @@ const EVCalculator = () => {
                 <RevenueInputs
                   revenueData={revenueData}
                   setRevenueData={setRevenueData}
+                   errors={revenueErrors}
+                    setErrors={setRevenueErrors}
                 />
 
                 <div className="flex justify-end">

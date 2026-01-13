@@ -25,6 +25,7 @@ import ReactDOM from "react-dom/client";
 import { Auth0Provider } from "@auth0/auth0-react";
 import "@/index.css";
 import App from "@/App";
+import { UserProvider } from "./contexts/userContext";
 
 const domain = "dev-qym8p8oypn0lsq3v.uk.auth0.com";
 const clientId = "XmLyglgU5GXeSeq9EFhbgrkmNHGG4SeW";
@@ -37,13 +38,16 @@ root.render(
       domain={domain}
       clientId={clientId}
       authorizationParams={{
-        redirect_uri: process.env.REACT_APP_AUTH0_REDIRECT_URI,
+        // redirect_uri: process.env.REACT_APP_AUTH0_REDIRECT_URI,
+        redirect_uri: window.location.origin, // Local host login issue
           scope: "openid profile email",
       }}
        cacheLocation="localstorage"
         useRefreshTokens={true}
-    >
+    > <UserProvider>
+
       <App />
+      </UserProvider>
     </Auth0Provider>
   </React.StrictMode>
 );

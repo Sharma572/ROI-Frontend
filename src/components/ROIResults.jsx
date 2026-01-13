@@ -453,154 +453,117 @@ const handleJsonPdfDownload = async () => {
           </CardContent>
         </Card>
 
-        <div className="border-[1px] border-yellow-200 rounded-2xl px-4 py-3 
-            animate-none shadow-[0_0_12px_rgba(255, 255, 0, 0.276)]
-            cursor-not-allowed">
-          {/* 🔒 Upgrade Message */}
+       <div className="border-[1px] border-yellow-200 rounded-2xl px-4 py-3 
+            shadow-[0_0_12px_rgba(255, 255, 0, 0.276)] cursor-not-allowed">
+
           {!unlocked && (
             <div className="mt-4 mb-4 flex items-center justify-center gap-2 font-bold text-xl bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg">
               <Lock className="h-5 w-5 text-yellow-600" />
-              <span>
-                You need to upgrade your plan to access export features.
-              </span>
+              <span>You need to upgrade your plan to access premium features.</span>
             </div>
           )}
-          {/* Yearly Projections */}
+
+          {/* -------------------- SECURE SECTION #1: YEARLY PROJECTIONS -------------------- */}
           <Card>
             <CardHeader>
               <CardTitle>
-                {" "}
-                {results?.revenueData?.timeline?.analysisYears}-Year Profit
-                Projections
+                {results?.revenueData?.timeline?.analysisYears}-Year Profit Projections
               </CardTitle>
-              <CardDescription>
-                Expected yearly profits with growth assumptions
-              </CardDescription>
+              <CardDescription>Expected yearly profits</CardDescription>
             </CardHeader>
-            {/* <CardContent>
-            <div>
-              {results.yearlyProfits.map((year, index) => (
-                <div
-                  key={year.year}
-                  className="grid grid-cols-4 gap-2 py-3 border-b border-slate-100 last:border-b-0"
-                >
-                  <div className="font-medium">Year {year.year}</div>
-                  <div className="text-emerald-600 blur-sm">
-                    {getCurrencySymbol()}
-                    {year.revenue.toLocaleString()}
-                  </div>
-                  <div className="text-red-600 blur-sm">
-                    {getCurrencySymbol()}
-                    {year.costs.toLocaleString()}
-                  </div>
-                  <div className="font-semibold text-slate-900 blur-sm">
-                    {getCurrencySymbol()}
-                    {year.profit.toLocaleString()}
-                  </div>
-                </div>
-              ))}
 
-              <div className="grid grid-cols-4 gap-4 py-4 bg-slate-50 rounded font-semibold">
-                <div>Total</div>
-                <div className="text-emerald-600 blur-sm">
-                  {getCurrencySymbol()}
-                  {results.yearlyProfits
-                    .reduce((sum, year) => sum + year.revenue, 0)
-                    .toLocaleString()}
-                </div>
-                <div className="text-red-600 blur-sm">
-                  {getCurrencySymbol()}
-                  {results.yearlyProfits
-                    .reduce((sum, year) => sum + year.costs, 0)
-                    .toLocaleString()}
-                </div>
-                <div className="text-slate-900 blur-sm">
-                  {getCurrencySymbol()}
-                  {results.fiveYearProfit.toLocaleString()}
-                </div>
-              </div>
-            </div>
-          </CardContent> */}
             <CardContent>
               <div className="relative">
-                {/* TABLE CONTENT */}
-                <div
-                  className={`${
-                    !unlocked ? "blur-sm pointer-events-none select-none" : ""
-                  }`}
-                >
-                  <div>
-                    {/* Table Header */}
-                    <div className="grid grid-cols-4 gap-2 py-3 bg-slate-200 font-semibold border-b border-slate-300">
+
+                {/* REAL CONTENT (only when unlocked) */}
+                {unlocked ? (
+                  <>
+
+                    {/* HEADER */}
+                    <div className="grid grid-cols-4 gap-2 py-3 bg-slate-200 font-semibold border-b">
                       <div className="text-center">Year</div>
                       <div className="text-center">Revenue</div>
                       <div className="text-center">Cost</div>
                       <div className="text-center">Profit</div>
                     </div>
 
-                    {/* Rows */}
-                    {results.yearlyProfits.map((year, index) => (
+                    {/* REAL ROWS */}
+                    {results.yearlyProfits.map((year) => (
                       <div
                         key={year.year}
-                        className="grid grid-cols-4 gap-2 py-3 border-b border-slate-100 last:border-b-0"
+                        className="grid grid-cols-4 gap-2 py-3 border-b"
                       >
-                        <div className="font-medium text-center">
-                          Year {year.year}
-                        </div>
-
-                        <div className="text-emerald-600  text-center">
+                        <div className="text-center font-medium">Year {year.year}</div>
+                        <div className="text-center text-emerald-600">
                           {getCurrencySymbol()}
                           {formatCurrency(year.revenue)}
                         </div>
-
-                        <div className="text-red-600  text-center">
+                        <div className="text-center text-red-600">
                           {getCurrencySymbol()}
                           {formatCurrency(year.costs)}
                         </div>
-
-                        <div className="font-semibold text-slate-900 text-center">
+                        <div className="text-center font-semibold">
                           {getCurrencySymbol()}
                           {formatCurrency(year.profit)}
                         </div>
                       </div>
                     ))}
 
-                    {/* Total Row */}
+                    {/* TOTAL ROW */}
                     <div className="grid grid-cols-4 gap-4 py-4 bg-slate-50 rounded font-semibold">
-                      <div className=" text-center">Total</div>
-
-                      <div className="text-emerald-600 text-center">
+                      <div className="text-center">Total</div>
+                      <div className="text-center text-emerald-600">
                         {getCurrencySymbol()}
                         {results.yearlyProfits
-                          .reduce((sum, year) => sum + year.revenue, 0)
+                          .reduce((s, y) => s + y.revenue, 0)
                           .toLocaleString()}
                       </div>
-
-                      <div className="text-red-600 text-center">
+                      <div className="text-center text-red-600">
                         {getCurrencySymbol()}
                         {results.yearlyProfits
-                          .reduce((sum, year) => sum + year.costs, 0)
+                          .reduce((s, y) => s + y.costs, 0)
                           .toLocaleString()}
                       </div>
-
-                      <div className="text-slate-900 text-center">
+                      <div className="text-center text-slate-900">
                         {getCurrencySymbol()}
                         {results.fiveYearProfit.toLocaleString()}
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                ) : (
+                  <>
+                    {/* PLACEHOLDER HEADER */}
+                    <div className="grid grid-cols-4 gap-2 py-3 bg-slate-200 font-semibold border-b">
+                      <div className="text-center">Year</div>
+                      <div className="text-center">Revenue</div>
+                      <div className="text-center">Cost</div>
+                      <div className="text-center">Profit</div>
+                    </div>
+
+                    {/* PLACEHOLDER ROWS */}
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="grid grid-cols-4 gap-2 py-3 border-b opacity-60"
+                      >
+                        <div className="h-5 bg-slate-200 rounded"></div>
+                        <div className="h-5 bg-slate-200 rounded"></div>
+                        <div className="h-5 bg-slate-200 rounded"></div>
+                        <div className="h-5 bg-slate-200 rounded"></div>
+                      </div>
+                    ))}
+                  </>
+                )}
 
                 {/* OVERLAY BUTTON */}
                 {!unlocked && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm">
                     <button
-                      onClick={() => setUnlocked(true)}
+                      // onClick={() => setUnlocked(true)}
+                       onClick={() => navigate("/pricing")}
                       className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow"
                     >
-                      <span className="flex justify-center items-center">
-                        <LockKeyholeOpen />
-                      </span>
+                      <LockKeyholeOpen className="inline-block mr-1" />
                       Unlock Now
                     </button>
                   </div>
@@ -609,7 +572,7 @@ const handleJsonPdfDownload = async () => {
             </CardContent>
           </Card>
 
-          {/* Key Insights & Recommendations */}
+          {/* -------------------- SECURE SECTION #2: INSIGHTS -------------------- */}
           <Card className="border-2 border-blue-200 my-4">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -617,135 +580,59 @@ const handleJsonPdfDownload = async () => {
                 Key Insights & Recommendations
               </CardTitle>
             </CardHeader>
-            {/* <CardContent className="space-y-4 blur-sm">
-            <div className="space-y-3">
-              {results.roi >= 15 ? (
-                <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-lg">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium text-emerald-800">
-                      Strong ROI Potential
-                    </p>
-                    <p className="text-emerald-700 text-sm">
-                      Your projected ROI of {results.roi}% indicates excellent
-                      investment potential.
-                    </p>
-                  </div>
-                </div>
-              ) : results.roi >= 10 ? (
-                <div className="flex items-start gap-3 p-4 bg-yellow-50 rounded-lg">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium text-yellow-800">Moderate ROI</p>
-                    <p className="text-yellow-700 text-sm">
-                      Consider optimizing costs or increasing pricing to improve
-                      ROI.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
-                  <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium text-red-800">Low ROI Warning</p>
-                    <p className="text-red-700 text-sm">
-                      Current projections show low returns. Review costs and
-                      usage assumptions.
-                    </p>
-                  </div>
-                </div>
-              )}
 
-              {results.paybackPeriod <= 3 ? (
-                <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                  <div>
-                    <p className="font-medium text-blue-800">Quick Payback</p>
-                    <p className="text-blue-700 text-sm">
-                      Your {results.paybackPeriod}-year payback period is
-                      excellent for this industry.
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </CardContent> */}
             <CardContent className="relative">
-              {/* CONTENT (blurred when locked) */}
-              <div
-                className={`${
-                  !unlocked ? "blur-sm pointer-events-none select-none" : ""
-                } space-y-4`}
-              >
-                <div className="space-y-3">
+
+              {unlocked ? (
+                <div className="space-y-4">
                   {results.roi >= 15 ? (
-                    <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-lg">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
-                      <div>
-                        <p className="font-medium text-emerald-800">
-                          Strong ROI Potential
-                        </p>
-                        <p className="text-emerald-700 text-sm">
-                          Your projected ROI of {results.roi?.toFixed(2)}%
-                          indicates excellent investment potential.
-                        </p>
-                      </div>
+                    <div className="p-4 bg-emerald-50 rounded-lg">
+                      <p className="font-medium text-emerald-800">Strong ROI Potential</p>
+                      <p className="text-emerald-700">
+                        ROI of {results.roi.toFixed(2)}% indicates excellent performance.
+                      </p>
                     </div>
                   ) : results.roi >= 10 ? (
-                    <div className="flex items-start gap-3 p-4 bg-yellow-50 rounded-lg">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                      <div>
-                        <p className="font-medium text-yellow-800">
-                          Moderate ROI
-                        </p>
-                        <p className="text-yellow-700 text-sm">
-                          Consider optimizing costs or increasing pricing to
-                          improve ROI.
-                        </p>
-                      </div>
+                    <div className="p-4 bg-yellow-50 rounded-lg">
+                      <p className="font-medium text-yellow-800">Moderate ROI</p>
+                      <p className="text-yellow-700">
+                        You may improve ROI by optimizing operating costs.
+                      </p>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
-                      <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                      <div>
-                        <p className="font-medium text-red-800">
-                          Low ROI Warning
-                        </p>
-                        <p className="text-red-700 text-sm">
-                          Current projections show low returns. Review costs and
-                          usage assumptions.
-                        </p>
-                      </div>
+                    <div className="p-4 bg-red-50 rounded-lg">
+                      <p className="font-medium text-red-800">Low ROI Warning</p>
+                      <p className="text-red-700">
+                        Review cost assumptions to improve overall profitability.
+                      </p>
                     </div>
                   )}
 
                   {results.paybackPeriod <= 3 && (
-                    <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                      <div>
-                        <p className="font-medium text-blue-800">
-                          Quick Payback
-                        </p>
-                        <p className="text-blue-700 text-sm">
-                          Your {results.paybackPeriod}-year payback period is
-                          excellent for this industry.
-                        </p>
-                      </div>
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <p className="font-medium text-blue-800">Quick Payback</p>
+                      <p className="text-blue-700">
+                        A payback period of {results.paybackPeriod} years is excellent.
+                      </p>
                     </div>
                   )}
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-3 opacity-60">
+                  <div className="h-6 bg-slate-200 rounded w-3/4"></div>
+                  <div className="h-6 bg-slate-200 rounded w-2/3"></div>
+                  <div className="h-6 bg-slate-200 rounded w-1/2"></div>
+                </div>
+              )}
 
-              {/* OVERLAY BUTTON */}
               {!unlocked && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+                <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-sm">
                   <button
-                    onClick={() => setUnlocked(true)}
+                   
+                     onClick={() => navigate("/pricing")}
                     className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow"
                   >
-                    <span className="flex justify-center items-center">
-                      <LockKeyholeOpen />
-                    </span>
+                    <LockKeyholeOpen className="inline-block mr-2" />
                     Unlock Now
                   </button>
                 </div>
@@ -753,83 +640,44 @@ const handleJsonPdfDownload = async () => {
             </CardContent>
           </Card>
 
-          {/* Export Options */}
+          {/* ---------------------- EXPORT BUTTONS ---------------------- */}
           <Card className="mb-4">
             <CardContent className="pt-4">
-              {/* <div className="flex flex-col sm:flex-row gap-4">
-            <Button
-              className="flex-1"
-              variant="outline"
-              onClick={handleDownloadPdf}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export PDF Report
-            </Button>
-            <Button
-              className="flex-1"
-              variant="outline"
-              onClick={handleExportExcel}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export Excel Data
-            </Button>
-          </div> */}
-              <div className="flex justify-around flex-col sm:flex-row gap-4">
-                {/* PDF Button */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-around">
+
+                {/* PDF */}
                 <div className="relative flex items-center">
                   {!unlocked && (
-                    <div className="absolute -left-6 flex items-center">
-                      <Lock className="h-4 w-4 text-yellow-500" />
-                    </div>
+                    <Lock className="h-4 w-4 text-yellow-500 absolute -left-6" />
                   )}
 
-                  {/* <Button
-                    className={`flex items-center gap-2 px-5 py-3 rounded-xl border 
-        transition-all duration-300
-        ${
-          unlocked
-            ? "border-emerald-500 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-600"
-            : "border-gray-300 text-gray-500 bg-gray-100 opacity-60 cursor-not-allowed"
-        }`}
+                  <Button
+                    className={`flex items-center gap-2 px-5 py-3 rounded-xl border ${
+                      unlocked
+                        ? "border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+                        : "border-gray-300 text-gray-500 bg-gray-100 opacity-60 cursor-not-allowed"
+                    }`}
                     disabled={!unlocked}
-                    onClick={unlocked ? handleDownloadPdf : undefined}
+                    onClick={unlocked ? handleJsonPdfDownload : undefined}
                     variant="outline"
                   >
                     <Download className="h-4 w-4" />
                     Export PDF Report
-                  </Button> */}
-                  <Button
-  className={`flex items-center gap-2 px-5 py-3 rounded-xl border
-  ${unlocked
-    ? "border-emerald-500 text-emerald-700 hover:bg-emerald-50"
-    : "border-gray-300 text-gray-500 bg-gray-100 opacity-60 cursor-not-allowed"
-  }`}
-  disabled={!unlocked}
-  onClick={unlocked ? handleJsonPdfDownload : undefined}
-  variant="outline"
->
-  <Download className="h-4 w-4" />
-  Export PDF Report
-</Button>
-
+                  </Button>
                 </div>
 
-                {/* Excel Button */}
+                {/* Excel */}
                 <div className="relative flex items-center">
                   {!unlocked && (
-                    <div className="absolute -left-6 flex items-center">
-                      <Lock className="h-4 w-4 text-yellow-500" />
-                    </div>
+                    <Lock className="h-4 w-4 text-yellow-500 absolute -left-6" />
                   )}
 
                   <Button
-                    className={`flex items-center gap-2 px-5 py-3 rounded-xl border
-        transition-all duration-300
-        ${
-          unlocked
-            ? "border-blue-500 text-blue-700 hover:bg-blue-50 hover:border-blue-600"
-            : "border-gray-300 text-gray-500 bg-gray-100 opacity-60 cursor-not-allowed"
-        }`}
+                    className={`flex items-center gap-2 px-5 py-3 rounded-xl border ${
+                      unlocked
+                        ? "border-blue-500 text-blue-700 hover:bg-blue-50"
+                        : "border-gray-300 text-gray-500 bg-gray-100 opacity-60 cursor-not-allowed"
+                    }`}
                     disabled={!unlocked}
                     onClick={unlocked ? handleExportExcel : undefined}
                     variant="outline"
@@ -838,64 +686,14 @@ const handleJsonPdfDownload = async () => {
                     Export Excel Data
                   </Button>
                 </div>
+
               </div>
             </CardContent>
           </Card>
         </div>
+ 
       </div>
 
-      {results && (
-        <>
-          {isAuthenticated ? (
-            // <Button
-            //   onClick={() => saveInvestmentReport(results)}
-            //   className="bg-emerald-600 text-white"
-            // >
-            //   Save Report
-            // </Button>
-            <Button
-              onClick={() => setShowModal(true)}
-              className="bg-emerald-600 text-white"
-            >
-              Save Report
-            </Button>
-          ) : (
-            <Button
-              onClick={() => loginWithRedirect()}
-              style={{ background: "#1ac47d" }}
-              className=" text-white"
-            >
-              Login to Save Report
-            </Button>
-          )}
-        </>
-      )}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Name Your Project</DialogTitle>
-          </DialogHeader>
-
-          <Input
-            placeholder="Enter report name..."
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-          />
-
-          <DialogFooter>
-            <Button
-              disabled={!projectName.trim()}
-              className="bg-emerald-600 text-white"
-              onClick={() => {
-                saveInvestmentReport(results, projectName);
-                setShowModal(false);
-              }}
-            >
-              Save My Report
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

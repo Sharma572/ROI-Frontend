@@ -141,6 +141,8 @@ import { MaterialReactTable } from "material-react-table";
 
 const InvestmentReport = () => {
   const { user } = useAuth0();
+  console.log("Current User Data",user);
+  
   const CurrentUserId = user?.sub;
   const [data, setData] = useState([]);
   const navigate = useNavigate();
@@ -152,15 +154,21 @@ const handleEdit = (project) => {
   setEditProjectName(project.project_name);
   setEditModalOpen(true);
 };
+
 const handleUpdateProjectName = async () => {
   try {
     const response = await fetch(
-      `${process.env.REACT_APP_BASE_URL}/api/v1/investments/updateinvestment`,
+      `${process.env.REACT_APP_BASE_URL}/api/v1/investments/update/${selectedProject._id}`,
       {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          id: selectedProject._id,
+          currentUser: {
+    sub: user?.sub,
+    email: user?.email,
+  },
           project_name: editProjectName,
         }),
       }
@@ -169,6 +177,7 @@ const handleUpdateProjectName = async () => {
     const result = await response.json();
     if (!response.ok) throw new Error(result.message);
 
+    // Update UI
     setData((prev) =>
       prev.map((item) =>
         item._id === selectedProject._id
@@ -184,12 +193,13 @@ const handleUpdateProjectName = async () => {
   }
 };
 
+
   useEffect(() => {
     fetch(
       `${process.env.REACT_APP_BASE_URL}/api/v1/investments/getinvestments?user_id=${CurrentUserId}`
     )
       .then((res) => res.json())
-      .then((result) => setData(result))
+      .then((result) =>  setData([...result].reverse()))
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
@@ -218,6 +228,17 @@ const handleUpdateProjectName = async () => {
       </button>
     </div>
   ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created At",
+      Cell: ({ cell }) => {
+    const d = new Date(cell.getValue());
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  },
       },
       {
         accessorKey: "roi",

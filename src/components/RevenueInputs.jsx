@@ -8,7 +8,7 @@ import { DollarSign, Users, TrendingUp, Clock, TrendingUpIcon } from 'lucide-rea
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useChargerType } from '@/contexts/ChargerTypeContext';
 
-const RevenueInputs = ({ revenueData, setRevenueData }) => {
+const RevenueInputs = ({ revenueData, setRevenueData,errors,setErrors }) => {
   const { getCurrencySymbol, formatCurrencyInput, convertInputToUSD } = useCurrency();
  const { chargerType } = useChargerType();
 console.log("Charger Type Selected on Cost",chargerType);
@@ -22,6 +22,13 @@ console.log("Charger Type Selected on Cost",chargerType);
         [field]: usdValue
       }
     }));
+
+     // ✅ CLEAR ERROR ON TYPE
+  setErrors((prev) => {
+    const updated = { ...prev };
+    delete updated[field]; // level2Rate / level3Rate
+    return updated;
+  });
   };
 
   // Older Logic
@@ -167,7 +174,19 @@ const updateUsage = (field, value) => {
     // ⭐ RESET LOGIC WHEN FIELD IS CLEARED (NO NaN Issues)
     // -----------------------------------------------------
     if (value === "") {
-      
+      // ✅ If Avg Energy is cleared → reset sessions ONLY
+if (field === "avgEnergyLevel2") {
+  usage.dailySessionsLevel2 = 0;
+  usage.monthlySessionsLevel2 = 0;
+  return { ...prev, usage };
+}
+
+if (field === "avgEnergyLevel3") {
+  usage.dailySessionsLevel3 = 0;
+  usage.monthlySessionsLevel3 = 0;
+  return { ...prev, usage };
+}
+
       // If monthly energy L2 is cleared → reset only L2 sessions
       if (field === "monthlyEnergyLevel2") {
         usage.dailySessionsLevel2 = 0;
@@ -257,24 +276,24 @@ const updateUsage = (field, value) => {
     // -----------------------------------------------------
 
     // LEVEL 2
-    if (field === "dailySessionsLevel2" || field === "avgEnergyLevel2") {
-      const daily = usage.dailySessionsLevel2 || 0;
-      const avg = usage.avgEnergyLevel2 || 0;
+    // if (field === "dailySessionsLevel2" || field === "avgEnergyLevel2") {
+    //   const daily = usage.dailySessionsLevel2 || 0;
+    //   const avg = usage.avgEnergyLevel2 || 0;
 
-      if (daily > 0 && avg > 0) {
-        usage.monthlyEnergyLevel2 = Math.round(daily * avg * 30);
-      }
-    }
+    //   if (daily > 0 && avg > 0) {
+    //     usage.monthlyEnergyLevel2 = Math.round(daily * avg * 30);
+    //   }
+    // }
 
     // LEVEL 3
-    if (field === "dailySessionsLevel3" || field === "avgEnergyLevel3") {
-      const daily = usage.dailySessionsLevel3 || 0;
-      const avg = usage.avgEnergyLevel3 || 0;
+    // if (field === "dailySessionsLevel3" || field === "avgEnergyLevel3") {
+    //   const daily = usage.dailySessionsLevel3 || 0;
+    //   const avg = usage.avgEnergyLevel3 || 0;
 
-      if (daily > 0 && avg > 0) {
-        usage.monthlyEnergyLevel3 = Math.round(daily * avg * 30);
-      }
-    }
+    //   if (daily > 0 && avg > 0) {
+    //     usage.monthlyEnergyLevel3 = Math.round(daily * avg * 30);
+    //   }
+    // }
 
     // -----------------------------------------------------
     // ⭐ AVG ENERGY CHANGE → RECALCULATE SESSIONS
@@ -303,26 +322,42 @@ const updateUsage = (field, value) => {
     // -----------------------------------------------------
 
     // LEVEL 2
-    if (
-      usage.monthlyEnergyLevel2 > 0 &&
-      usage.monthlySessionsLevel2 > 0 &&
-      field !== "monthlyEnergyLevel2" // <— DO NOT RECALC if clearing
-    ) {
-      usage.avgEnergyLevel2 = Number(
-        (usage.monthlyEnergyLevel2 / usage.monthlySessionsLevel2).toFixed(2)
-      );
-    }
+    // if (
+    //   usage.monthlyEnergyLevel2 > 0 &&
+    //   usage.monthlySessionsLevel2 > 0 &&
+    //   field !== "monthlyEnergyLevel2" // <— DO NOT RECALC if clearing
+    // ) {
+    //   usage.avgEnergyLevel2 = Number(
+    //     (usage.monthlyEnergyLevel2 / usage.monthlySessionsLevel2).toFixed(2)
+    //   );
+    // }
 
-    // LEVEL 3
-    if (
-      usage.monthlyEnergyLevel3 > 0 &&
-      usage.monthlySessionsLevel3 > 0 &&
-      field !== "monthlyEnergyLevel3"
-    ) {
-      usage.avgEnergyLevel3 = Number(
-        (usage.monthlyEnergyLevel3 / usage.monthlySessionsLevel3).toFixed(2)
-      );
-    }
+    // // LEVEL 3
+    // if (
+    //   usage.monthlyEnergyLevel3 > 0 &&
+    //   usage.monthlySessionsLevel3 > 0 &&
+    //   field !== "monthlyEnergyLevel3"
+    // ) {
+    //   usage.avgEnergyLevel3 = Number(
+    //     (usage.monthlyEnergyLevel3 / usage.monthlySessionsLevel3).toFixed(2)
+    //   );
+    // }
+
+    if (field === "monthlyEnergyLevel2" && usage.avgEnergyLevel2 > 0) {
+  const dailyEnergy = num / 30;
+  const dailySessions = dailyEnergy / usage.avgEnergyLevel2;
+
+  usage.dailySessionsLevel2 = Number(dailySessions.toFixed(2));
+  usage.monthlySessionsLevel2 = Math.round(dailySessions * 30);
+}
+if (field === "avgEnergyLevel2" && usage.monthlyEnergyLevel2 > 0) {
+  const dailyEnergy = usage.monthlyEnergyLevel2 / 30;
+  const dailySessions = dailyEnergy / num;
+
+  usage.dailySessionsLevel2 = Number(dailySessions.toFixed(2));
+  usage.monthlySessionsLevel2 = Math.round(dailySessions * 30);
+}
+
 
     return { ...prev, usage };
   });
@@ -362,16 +397,33 @@ const updateUsage = (field, value) => {
   {/* LEVEL 2 RATE */}
   {(chargerType === "level2" || chargerType === "both") && (
     <div>
-      <Label htmlFor="level2-rate">Level 2 (AC) Rate ({getCurrencySymbol()}/kWh)</Label>
-      <Input
+       <Label htmlFor="level2-rate">Level 2 (AC) Rate ({getCurrencySymbol()}/kWh)  <span className="text-red-600 font-bold">*</span></Label>
+     
+      {/* <Input
         id="level2-rate"
         type="text"
        
-        placeholder="0.25"
+        placeholder="0"
         value={revenueData.pricing.level2Rate || ''}
         onChange={(e) => updatePricing('level2Rate', e.target.value)}
         className="mt-1"
-      />
+      /> */}
+      <Input
+  id="level2-rate"
+  type="number"
+  min="0"
+  step="0.01"
+  inputMode="decimal"
+  placeholder="0"
+  value={revenueData.pricing.level2Rate > 0 ? revenueData.pricing.level2Rate : ""}
+  onChange={(e) => updatePricing("level2Rate", e.target.value)}
+  className={`mt-1 ${
+    errors?.level2Rate ? "border-red-500 focus:ring-red-500" : ""
+  }`}
+/>
+{errors?.level2Rate && (
+  <p className="text-sm text-red-600 mt-1">{errors.level2Rate}</p>
+)}
       <p className="text-sm text-slate-500 mt-1">
         Typical range: {getCurrencySymbol()}11 - {getCurrencySymbol()}16
       </p>
@@ -381,8 +433,10 @@ const updateUsage = (field, value) => {
   {/* LEVEL 3 RATE */}
   {(chargerType === "level3" || chargerType === "both") && (
     <div>
-      <Label htmlFor="level3-rate">Level 3 (DC) Rate ({getCurrencySymbol()}/kWh)</Label>
-      <Input
+      {/* <Label htmlFor="level3-rate">Level 3 (DC) Rate ({getCurrencySymbol()}/kWh)</Label> */}
+      <Label htmlFor="level3-rate">Level 3 (DC) Rate ({getCurrencySymbol()}/kWh)  <span className="text-red-600 font-bold">*</span></Label>
+     
+      {/* <Input
         id="level3-rate"
         type="text"
 
@@ -390,7 +444,24 @@ const updateUsage = (field, value) => {
         value={revenueData.pricing.level3Rate || ''}
         onChange={(e) => updatePricing('level3Rate', e.target.value)}
         className="mt-1"
-      />
+      /> */}
+      <Input
+  id="level3-rate"
+  type="number"
+  min="0"
+  step="0.01"
+  inputMode="decimal"
+  placeholder="0"
+  value={revenueData.pricing.level3Rate > 0 ? revenueData.pricing.level3Rate : ""}
+  onChange={(e) => updatePricing("level3Rate", e.target.value)}
+     className={`mt-1 ${
+    errors?.level3Rate ? "border-red-500 focus:ring-red-500" : ""
+  }`}
+/>
+{errors?.level3Rate && (
+  <p className="text-sm text-red-600 mt-1">{errors.level3Rate}</p>
+)}
+
       <p className="text-sm text-slate-500 mt-1">
         Typical range: {getCurrencySymbol()}14 - {getCurrencySymbol()}20
       </p>
@@ -406,7 +477,14 @@ const updateUsage = (field, value) => {
       id="membership-fee"
       type="text"
       placeholder="0"
-      value={formatCurrencyInput(revenueData.pricing.membershipFee || 0).toFixed(0)}
+      // value={formatCurrencyInput(revenueData.pricing.membershipFee || 0).toFixed(0)}
+      value={
+    revenueData.pricing.membershipFee > 0
+      ? formatCurrencyInput(
+          revenueData.pricing.membershipFee
+        ).toFixed(0)
+      : ""
+  }
       onChange={(e) => updatePricing('membershipFee', e.target.value)}
       className="mt-1"
     />

@@ -13,13 +13,15 @@ import { Plug, Wrench, Zap, Building } from "lucide-react";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { useChargerType } from "@/contexts/ChargerTypeContext";
 
-const CostInputs = ({ costData, setCostData,isAutofill,setIsAutofill }) => {
+const CostInputs = ({ costData, setCostData,isAutofill,setIsAutofill,errors,  setErrors  }) => {
   const { getCurrencySymbol, formatCurrencyInput, convertInputToUSD } =
     useCurrency();
     const revenueOptions = [
   { label: "Revenue Share (%)", value: "percentage" },
   { label: "Revenue Share per kWh", value: "perKwh" }
 ];
+console.log("error of CostInput ❌",errors);
+
 const [revenueType, setRevenueType] = useState("percentage");
 useEffect(() => {
   // Sync UI dropdown with parent costData value
@@ -120,6 +122,28 @@ const updateEquipmentData = (type, field, value) => {
       },
     },
   }));
+
+  // ✅ CLEAR ERROR WHEN USER TYPES
+ setErrors((prev) => {
+  if (!prev) return prev;
+
+  const updated = { ...prev };
+
+  if (type === "level2Chargers" && field === "quantity") {
+    delete updated.level2Qty;
+  }
+  if (type === "level2Chargers" && field === "unitCost") {
+    delete updated.level2Cost;
+  }
+  if (type === "level3Chargers" && field === "quantity") {
+    delete updated.level3Qty;
+  }
+  if (type === "level3Chargers" && field === "unitCost") {
+    delete updated.level3Cost;
+  }
+
+  return updated;
+});
 };
 
 
@@ -187,14 +211,21 @@ const updateEquipmentData = (type, field, value) => {
           <Label htmlFor="level2-qty">Quantity  <span className="text-red-600 font-bold">*</span></Label>
           <Input
             id="level2-qty"
+            className={`mt-1 ${
+    errors.level2Qty ? "border-red-500 focus:ring-red-500" : ""
+  }`}
           type="text"
+          required
             placeholder="0"
             value={costData.equipment.level2Chargers.quantity || ""}
             onChange={(e) =>
               updateEquipmentData("level2Chargers", "quantity", e.target.value)
             }
-            className="mt-1"
+           
           />
+          {errors.level2Qty && (
+  <p className="text-sm text-red-600 mt-1">{errors.level2Qty}</p>
+)}
         </div>
 
         <div>
@@ -204,15 +235,30 @@ const updateEquipmentData = (type, field, value) => {
           <Input
             id="level2-cost"
             type="text"
-            placeholder={formatCurrencyInput(2500).toFixed(0)}
-            value={formatCurrencyInput(
-              costData.equipment.level2Chargers.unitCost || 0
-            ).toFixed(0)}
+            placeholder={formatCurrencyInput(0).toFixed(0)}
+            required
+             className={`mt-1 ${
+    errors.level2Cost ? "border-red-500 focus:ring-red-500" : ""
+  }`}
+            // value={formatCurrencyInput(
+            //   costData.equipment.level2Chargers.unitCost || 0
+            // ).toFixed(0)}
+            value={
+  costData.equipment.level2Chargers.unitCost > 0
+    ? formatCurrencyInput(
+        costData.equipment.level2Chargers.unitCost
+      ).toFixed(0)
+    : ""
+}
+
             onChange={(e) =>
               updateEquipmentData("level2Chargers", "unitCost", e.target.value)
             }
-            className="mt-1"
+           
           />
+          {errors.level2Cost && (
+  <p className="text-sm text-red-600 mt-1">{errors.level2Cost}</p>
+)}
         </div>
       </div>
     </div>
@@ -234,12 +280,18 @@ const updateEquipmentData = (type, field, value) => {
             id="level3-qty"
             type="text"
             placeholder="0"
+            required
             value={costData.equipment.level3Chargers.quantity || ""}
             onChange={(e) =>
               updateEquipmentData("level3Chargers", "quantity", e.target.value)
             }
-            className="mt-1"
+           className={`mt-1 ${
+    errors.level3Qty ? "border-red-500 focus:ring-red-500" : ""
+  }`}
           />
+          {errors.level3Qty && (
+  <p className="text-sm text-red-600 mt-1">{errors.level3Qty}</p>
+)}
         </div>
 
         <div>
@@ -250,15 +302,30 @@ const updateEquipmentData = (type, field, value) => {
           <Input
             id="level3-cost"
             type="text"
-            placeholder={formatCurrencyInput(45000).toFixed(0)}
-            value={formatCurrencyInput(
-              costData.equipment.level3Chargers.unitCost || 0
-            ).toFixed(0)}
+            required
+            // placeholder={formatCurrencyInput(45000).toFixed(0)}
+            placeholder="0"
+            // value={formatCurrencyInput(
+            //   costData.equipment.level3Chargers.unitCost || 0
+            // ).toFixed(0)}
+            value={
+  costData.equipment.level3Chargers.unitCost > 0
+    ? formatCurrencyInput(
+        costData.equipment.level3Chargers.unitCost
+      ).toFixed(0)
+    : ""
+}
+
             onChange={(e) =>
               updateEquipmentData("level3Chargers", "unitCost", e.target.value)
             }
-            className="mt-1"
+          className={`mt-1 ${
+    errors.level3Cost ? "border-red-500 focus:ring-red-500" : ""
+  }`}
           />
+          {errors.level3Cost && (
+  <p className="text-sm text-red-600 mt-1">{errors.level3Cost}</p>
+)}
         </div>
       </div>
     </div>
@@ -277,10 +344,16 @@ const updateEquipmentData = (type, field, value) => {
               <Input
                 id="transformer"
                 type="text"
-                placeholder={formatCurrencyInput(25000).toFixed(0)}
-                value={formatCurrencyInput(
-                  costData.equipment.transformer || 0
-                ).toFixed(0)}
+                placeholder={formatCurrencyInput(0).toFixed(0)}
+                // value={formatCurrencyInput(
+                //   costData.equipment.transformer || ""
+                // ).toFixed(0)}
+                value={
+  costData.equipment.transformer > 0
+    ? formatCurrencyInput(costData.equipment.transformer).toFixed(0)
+    : ""
+}
+
                 onChange={(e) =>
                   updateCostData("equipment", "transformer", e.target.value)
                 }
@@ -430,9 +503,9 @@ const updateEquipmentData = (type, field, value) => {
                 Electricity Cost ({getCurrencySymbol()}){" "}
                 <span className="text-red-600 font-bold">*</span> (/kWh)
               </Label>
-              <Input
+              {/* <Input
                 id="electricity-rate"
-                type="text"
+                type="number"
                 step="0.01"
                 placeholder="0"
                 value={costData.operating.electricityCostPerKwh || ""}
@@ -444,7 +517,29 @@ const updateEquipmentData = (type, field, value) => {
                   )
                 }
                 className="mt-1"
-              />
+              /> */}
+              <Input
+  id="electricity-rate"
+  type="number"
+  min="0"
+  step="0.01"
+  inputMode="decimal"
+  placeholder="0"
+  value={
+    costData.operating.electricityCostPerKwh > 0
+      ? costData.operating.electricityCostPerKwh
+      : ""
+  }
+  onChange={(e) =>
+    updateCostData(
+      "operating",
+      "electricityCostPerKwh",
+      e.target.value
+    )
+  }
+  className="mt-1"
+/>
+
                <p className="text-sm text-slate-500 mt-1">
         Typical Cost: {getCurrencySymbol()}4 - {getCurrencySymbol()}11
       </p>

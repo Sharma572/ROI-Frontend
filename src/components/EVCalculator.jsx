@@ -424,7 +424,7 @@ setRevenueErrors({});
 
     // 3️⃣ SEND TO BACKEND
     const response = await fetch(
-      "http://localhost:8080/api/v1/investments/createinvestment",
+      `${process.env.REACT_APP_BASE_URL}/api/v1/investments/createinvestment`,
       {
         method: "POST",
         headers: {

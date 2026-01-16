@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -39,19 +39,33 @@ import { useCurrency } from "../contexts/CurrencyContext";
 import { useAuth0 } from "@auth0/auth0-react";
 import { pdf } from "@react-pdf/renderer";
 import { RoiPdfDocument } from "../pdf/RoiPdfDocument";
+import { useUser } from "@/contexts/userContext";
 
 const ROIResults = ({ results }) => {
-  const { user, loginWithRedirect, isAuthenticated } = useAuth0();
+  const { user } = useAuth0();
+  const { userState } = useUser();
+  console.log("userState in result",userState);
+  // Subscription State ✌️✌️✌️
+  const isUserSubscribed = userState?.profile?.isSubscribed;
   const { getCurrencySymbol, formatCurrency } = useCurrency();
   const [unlocked, setUnlocked] = useState(false);
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [projectName, setProjectName] = useState("");
+useEffect(() => {
+  const session = sessionStorage.getItem("roi_session");
+  console.log("Session Data",session);
+  
+  if (!session) return;
 
-  const handleUpgrade = () => {
+  const parsed = JSON.parse(session);
+  console.log("parsed Data unlocked",parsed);
+  
+  if (parsed.unlocked === true) {
     setUnlocked(true);
-  };
-
+  }
+}, []);
+ 
   const pdfRef = useRef();
   if (!results) {
     return (
@@ -69,6 +83,14 @@ const ROIResults = ({ results }) => {
       </Card>
     );
   }
+
+useEffect(() => {
+  const session = sessionStorage.getItem("roi_session");
+  if (!session) return;
+
+  const { unlocked } = JSON.parse(session);
+  setUnlocked(Boolean(unlocked));
+}, []);
 
   const saveInvestmentReport = async (results, projectName) => {
     const payload = {
@@ -233,51 +255,53 @@ const ROIResults = ({ results }) => {
     pdf.save("ROI_Report.pdf");
   };
 
-//   const handleJsonPdfDownload = async () => {
-//   const blob = await pdf(
-//     <RoiPdfDocument results={results} projectName={projectName || "ROI Report"} />
-//   ).toBlob();
-
-//   const url = URL.createObjectURL(blob);
-
-//   const a = document.createElement("a");
-//   a.href = url;
-//   a.download = `${projectName || "ROI_Report"}.pdf`;
-//   a.click();
-// };
-
-const handleJsonPdfDownload = async () => {
-  if (!results) return;
-
-  // 1️⃣ CLEAN & FORMAT DATA BEFORE SENDING TO PDF
-  const pdfResults = {
-    ...results,
-    annualRevenueFormatted: `${getCurrencySymbol()} ${results.annualRevenue.toLocaleString()}`,
-    annualCostsFormatted: `${getCurrencySymbol()} ${results.annualCosts.toLocaleString()}`,
-    annualProfitFormatted: `${getCurrencySymbol()} ${results.annualProfit.toLocaleString()}`,
-    totalInvestmentFormatted: `${getCurrencySymbol()} ${results.totalInvestment.toLocaleString()}`,
-    fiveYearProfitFormatted: `${getCurrencySymbol()} ${results.fiveYearProfit.toLocaleString()}`,
-
-    yearlyProfitsFormatted: results.yearlyProfits.map((y) => ({
-      year: y.year,
-      revenueFormatted: `${getCurrencySymbol()} ${y.revenue.toLocaleString()}`,
-      costsFormatted: `${getCurrencySymbol()} ${y.costs.toLocaleString()}`,
-      profitFormatted: `${getCurrencySymbol()} ${y.profit.toLocaleString()}`
-    }))
-  };
-
-  // 2️⃣ GENERATE PDF
+  const handleJsonPdfDownload = async () => {
   const blob = await pdf(
-    <RoiPdfDocument results={pdfResults} projectName={projectName || "ROI Report"} />
+    <RoiPdfDocument results={results} projectName={projectName || "ROI Report"} />
   ).toBlob();
 
-  // 3️⃣ DOWNLOAD PDF
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement("a");
   a.href = url;
   a.download = `${projectName || "ROI_Report"}.pdf`;
   a.click();
 };
+
+// const handleJsonPdfDownload = async () => {
+//   if (!results) return;
+
+//   // 1️⃣ CLEAN & FORMAT DATA BEFORE SENDING TO PDF
+//   const pdfResults = {
+//     ...results,
+//     annualRevenueFormatted: `${getCurrencySymbol()} ${results.annualRevenue.toLocaleString()}`,
+//     annualCostsFormatted: `${getCurrencySymbol()} ${results.annualCosts.toLocaleString()}`,
+//     annualProfitFormatted: `${getCurrencySymbol()} ${results.annualProfit.toLocaleString()}`,
+//     totalInvestmentFormatted: `${getCurrencySymbol()} ${results.totalInvestment.toLocaleString()}`,
+//     fiveYearProfitFormatted: `${getCurrencySymbol()} ${results.fiveYearProfit.toLocaleString()}`,
+
+//     yearlyProfitsFormatted: results.yearlyProfits.map((y) => ({
+//       year: y.year,
+//       revenueFormatted: `${getCurrencySymbol()} ${y.revenue.toLocaleString()}`,
+//       costsFormatted: `${getCurrencySymbol()} ${y.costs.toLocaleString()}`,
+//       profitFormatted: `${getCurrencySymbol()} ${y.profit.toLocaleString()}`
+//     }))
+//   };
+
+//   // 2️⃣ GENERATE PDF
+//   const blob = await pdf(
+//     <RoiPdfDocument results={pdfResults} projectName={projectName || "ROI Report"} />
+//   ).toBlob();
+
+//   // 3️⃣ DOWNLOAD PDF
+//   const url = URL.createObjectURL(blob);
+//   const a = document.createElement("a");
+//   a.href = url;
+//   a.download = `${projectName || "ROI_Report"}.pdf`;
+//   a.click();
+// };
+console.log("result",results);
+
 
 
   return (
@@ -454,9 +478,9 @@ const handleJsonPdfDownload = async () => {
         </Card>
 
        <div className="border-[1px] border-yellow-200 rounded-2xl px-4 py-3 
-            shadow-[0_0_12px_rgba(255, 255, 0, 0.276)] cursor-not-allowed">
+            shadow-[0_0_12px_rgba(255, 255, 0, 0.276)]">
 
-          {!unlocked && (
+          {!isUserSubscribed && (
             <div className="mt-4 mb-4 flex items-center justify-center gap-2 font-bold text-xl bg-yellow-50 border border-yellow-200 px-4 py-2 rounded-lg">
               <Lock className="h-5 w-5 text-yellow-600" />
               <span>You need to upgrade your plan to access premium features.</span>
@@ -464,181 +488,134 @@ const handleJsonPdfDownload = async () => {
           )}
 
           {/* -------------------- SECURE SECTION #1: YEARLY PROJECTIONS -------------------- */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {results?.revenueData?.timeline?.analysisYears}-Year Profit Projections
-              </CardTitle>
-              <CardDescription>Expected yearly profits</CardDescription>
-            </CardHeader>
+         {/* -------------------- PROJECTION TABLE -------------------- */}
+<Card>
+  <CardHeader>
+    <CardTitle>
+      {results?.revenueData?.timeline?.analysisYears}-Year Profit Projections
+    </CardTitle>
+    <CardDescription>Expected yearly profits</CardDescription>
+  </CardHeader>
 
-            <CardContent>
-              <div className="relative">
+  <CardContent>
+    {/* REAL DATA — SUBSCRIBED USERS */}
+    {isUserSubscribed && (
+      <>
+        <div className="grid grid-cols-4 gap-2 py-3 bg-slate-200 font-semibold border-b">
+          <div className="text-center">Year</div>
+          <div className="text-center">Revenue</div>
+          <div className="text-center">Cost</div>
+          <div className="text-center">Profit</div>
+        </div>
 
-                {/* REAL CONTENT (only when unlocked) */}
-                {unlocked ? (
-                  <>
+        {results.yearlyProfits.map((year) => (
+          <div key={year.year} className="grid grid-cols-4 gap-2 py-3 border-b">
+            <div className="text-center">Year {year.year}</div>
+            <div className="text-center text-emerald-600">
+              {formatCurrency(year.revenue)}
+            </div>
+            <div className="text-center text-red-600">
+              {formatCurrency(year.costs)}
+            </div>
+            <div className="text-center font-semibold">
+              {formatCurrency(year.profit)}
+            </div>
+          </div>
+        ))}
+      </>
+    )}
 
-                    {/* HEADER */}
-                    <div className="grid grid-cols-4 gap-2 py-3 bg-slate-200 font-semibold border-b">
-                      <div className="text-center">Year</div>
-                      <div className="text-center">Revenue</div>
-                      <div className="text-center">Cost</div>
-                      <div className="text-center">Profit</div>
-                    </div>
+    {/* LOCKED VIEW — NON SUBSCRIBED */}
+    {!isUserSubscribed && (
+      <div className="relative">
+        <div className="grid grid-cols-4 gap-2 py-3 bg-slate-200 font-semibold border-b">
+          <div className="text-center">Year</div>
+          <div className="text-center">Revenue</div>
+          <div className="text-center">Cost</div>
+          <div className="text-center">Profit</div>
+        </div>
 
-                    {/* REAL ROWS */}
-                    {results.yearlyProfits.map((year) => (
-                      <div
-                        key={year.year}
-                        className="grid grid-cols-4 gap-2 py-3 border-b"
-                      >
-                        <div className="text-center font-medium">Year {year.year}</div>
-                        <div className="text-center text-emerald-600">
-                          {getCurrencySymbol()}
-                          {formatCurrency(year.revenue)}
-                        </div>
-                        <div className="text-center text-red-600">
-                          {getCurrencySymbol()}
-                          {formatCurrency(year.costs)}
-                        </div>
-                        <div className="text-center font-semibold">
-                          {getCurrencySymbol()}
-                          {formatCurrency(year.profit)}
-                        </div>
-                      </div>
-                    ))}
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="grid grid-cols-4 gap-2 py-3 border-b opacity-50">
+            <div className="h-5 bg-slate-200 rounded"></div>
+            <div className="h-5 bg-slate-200 rounded"></div>
+            <div className="h-5 bg-slate-200 rounded"></div>
+            <div className="h-5 bg-slate-200 rounded"></div>
+          </div>
+        ))}
 
-                    {/* TOTAL ROW */}
-                    <div className="grid grid-cols-4 gap-4 py-4 bg-slate-50 rounded font-semibold">
-                      <div className="text-center">Total</div>
-                      <div className="text-center text-emerald-600">
-                        {getCurrencySymbol()}
-                        {results.yearlyProfits
-                          .reduce((s, y) => s + y.revenue, 0)
-                          .toLocaleString()}
-                      </div>
-                      <div className="text-center text-red-600">
-                        {getCurrencySymbol()}
-                        {results.yearlyProfits
-                          .reduce((s, y) => s + y.costs, 0)
-                          .toLocaleString()}
-                      </div>
-                      <div className="text-center text-slate-900">
-                        {getCurrencySymbol()}
-                        {results.fiveYearProfit.toLocaleString()}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* PLACEHOLDER HEADER */}
-                    <div className="grid grid-cols-4 gap-2 py-3 bg-slate-200 font-semibold border-b">
-                      <div className="text-center">Year</div>
-                      <div className="text-center">Revenue</div>
-                      <div className="text-center">Cost</div>
-                      <div className="text-center">Profit</div>
-                    </div>
+        {/* SINGLE UNLOCK OVERLAY */}
+        <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+          <button
+            onClick={() => {
+              sessionStorage.setItem(
+                "roi_session",
+                JSON.stringify({ results, unlocked: false })
+              );
+              navigate("/pricing");
+            }}
+            className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow"
+          >
+            <LockKeyholeOpen className="inline-block mr-1" />
+            Unlock Now
+          </button>
+        </div>
+      </div>
+    )}
+  </CardContent>
+</Card>
 
-                    {/* PLACEHOLDER ROWS */}
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="grid grid-cols-4 gap-2 py-3 border-b opacity-60"
-                      >
-                        <div className="h-5 bg-slate-200 rounded"></div>
-                        <div className="h-5 bg-slate-200 rounded"></div>
-                        <div className="h-5 bg-slate-200 rounded"></div>
-                        <div className="h-5 bg-slate-200 rounded"></div>
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {/* OVERLAY BUTTON */}
-                {!unlocked && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm">
-                    <button
-                      // onClick={() => setUnlocked(true)}
-                       onClick={() => navigate("/pricing")}
-                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow"
-                    >
-                      <LockKeyholeOpen className="inline-block mr-1" />
-                      Unlock Now
-                    </button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
 
           {/* -------------------- SECURE SECTION #2: INSIGHTS -------------------- */}
-          <Card className="border-2 border-blue-200 my-4">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-blue-600" />
-                Key Insights & Recommendations
-              </CardTitle>
-            </CardHeader>
+         <Card className="border-2 border-blue-200 my-4">
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <AlertCircle className="h-5 w-5 text-blue-600" />
+      Key Insights & Recommendations
+    </CardTitle>
+  </CardHeader>
 
-            <CardContent className="relative">
+  <CardContent className="relative">
+    {isUserSubscribed ? (
+      <div className="space-y-4">
+        {results.roi >= 15 ? (
+          <div className="p-4 bg-emerald-50 rounded-lg">
+            <p className="font-medium text-emerald-800">Strong ROI Potential</p>
+            <p className="text-emerald-700">
+              ROI of {results.roi.toFixed(2)}% indicates excellent performance.
+            </p>
+          </div>
+        ) : (
+          <div className="p-4 bg-yellow-50 rounded-lg">
+            <p className="font-medium text-yellow-800">Moderate ROI</p>
+            <p className="text-yellow-700">
+              You may improve ROI by optimizing operating costs.
+            </p>
+          </div>
+        )}
+      </div>
+    ) : (
+      <>
+        <div className="space-y-3 opacity-50">
+          <div className="h-6 bg-slate-200 rounded w-3/4"></div>
+          <div className="h-6 bg-slate-200 rounded w-2/3"></div>
+          <div className="h-6 bg-slate-200 rounded w-1/2"></div>
+        </div>
 
-              {unlocked ? (
-                <div className="space-y-4">
-                  {results.roi >= 15 ? (
-                    <div className="p-4 bg-emerald-50 rounded-lg">
-                      <p className="font-medium text-emerald-800">Strong ROI Potential</p>
-                      <p className="text-emerald-700">
-                        ROI of {results.roi.toFixed(2)}% indicates excellent performance.
-                      </p>
-                    </div>
-                  ) : results.roi >= 10 ? (
-                    <div className="p-4 bg-yellow-50 rounded-lg">
-                      <p className="font-medium text-yellow-800">Moderate ROI</p>
-                      <p className="text-yellow-700">
-                        You may improve ROI by optimizing operating costs.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-red-50 rounded-lg">
-                      <p className="font-medium text-red-800">Low ROI Warning</p>
-                      <p className="text-red-700">
-                        Review cost assumptions to improve overall profitability.
-                      </p>
-                    </div>
-                  )}
+        <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+          <button
+            onClick={() => navigate("/pricing")}
+            className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow"
+          >
+            <LockKeyholeOpen className="inline-block mr-1" />
+            Unlock Now
+          </button>
+        </div>
+      </>
+    )}
+  </CardContent>
+</Card>
 
-                  {results.paybackPeriod <= 3 && (
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <p className="font-medium text-blue-800">Quick Payback</p>
-                      <p className="text-blue-700">
-                        A payback period of {results.paybackPeriod} years is excellent.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3 opacity-60">
-                  <div className="h-6 bg-slate-200 rounded w-3/4"></div>
-                  <div className="h-6 bg-slate-200 rounded w-2/3"></div>
-                  <div className="h-6 bg-slate-200 rounded w-1/2"></div>
-                </div>
-              )}
-
-              {!unlocked && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-sm">
-                  <button
-                   
-                     onClick={() => navigate("/pricing")}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg shadow"
-                  >
-                    <LockKeyholeOpen className="inline-block mr-2" />
-                    Unlock Now
-                  </button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* ---------------------- EXPORT BUTTONS ---------------------- */}
           <Card className="mb-4">
@@ -647,18 +624,19 @@ const handleJsonPdfDownload = async () => {
 
                 {/* PDF */}
                 <div className="relative flex items-center">
-                  {!unlocked && (
+                  {!isUserSubscribed && (
                     <Lock className="h-4 w-4 text-yellow-500 absolute -left-6" />
                   )}
 
                   <Button
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl border ${
-                      unlocked
+                      isUserSubscribed
                         ? "border-emerald-500 text-emerald-700 hover:bg-emerald-50"
-                        : "border-gray-300 text-gray-500 bg-gray-100 opacity-60 cursor-not-allowed"
+                        : "border-gray-300 text-gray-500 bg-gray-100 opacity-60"
                     }`}
-                    disabled={!unlocked}
-                    onClick={unlocked ? handleJsonPdfDownload : undefined}
+                    disabled={!isUserSubscribed}
+                    // onClick={isUserSubscribed ? handleJsonPdfDownload : undefined}
+                     onClick={isUserSubscribed ? handleDownloadPdf : undefined}
                     variant="outline"
                   >
                     <Download className="h-4 w-4" />
@@ -668,18 +646,18 @@ const handleJsonPdfDownload = async () => {
 
                 {/* Excel */}
                 <div className="relative flex items-center">
-                  {!unlocked && (
+                  {!isUserSubscribed && (
                     <Lock className="h-4 w-4 text-yellow-500 absolute -left-6" />
                   )}
 
                   <Button
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl border ${
-                      unlocked
+                      isUserSubscribed
                         ? "border-blue-500 text-blue-700 hover:bg-blue-50"
-                        : "border-gray-300 text-gray-500 bg-gray-100 opacity-60 cursor-not-allowed"
+                        : "border-gray-300 text-gray-500 bg-gray-100 opacity-60 "
                     }`}
-                    disabled={!unlocked}
-                    onClick={unlocked ? handleExportExcel : undefined}
+                    disabled={!isUserSubscribed}
+                    onClick={isUserSubscribed ? handleExportExcel : undefined}
                     variant="outline"
                   >
                     <Download className="h-4 w-4" />

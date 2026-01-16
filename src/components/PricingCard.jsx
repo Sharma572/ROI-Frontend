@@ -1,7 +1,8 @@
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useUser } from "@/contexts/userContext";
 import { useWallet } from "@/contexts/WalletContext";
 import { useAuth0 } from "@auth0/auth0-react";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BadgeCent, ShieldCheck } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -61,31 +62,16 @@ export default function PricingPlans() {
  
 
       {/* Pricing Cards */}
-      <div className="max-w-7xl mx-auto mt-16 mb-8 grid md:grid-cols-3 gap-8">
-       {/* <PriceCard
-  title="Starter Pack"
-  price={499}
-  credits={15}
- Effective_Cost_per_Credit={"₹33 / $0.46 per credit"}
- Best_For={["New users","Students & small consultants","Occasional ROI calculations"]}
-/>
+      <div className="max-w-7xl mx-auto mt-16 mb-8 grid md:grid-cols-4 gap-2">
+
+
 
 <PriceCard
-  title="Pro Pack"
- price={1499}
-  credits={60}
-  recommended={true}
-  Effective_Cost_per_Credit={"₹25 / $0.30 per credit"}
-  Best_For={["EV consultants","Small infra companies","EV charger installers"]}
+  title="Basic Pack"
+  basePriceINR={0}
+  credits={10}
+  Best_For={["Trail"]}
 />
-
-<PriceCard
-  title="Business Pack"
-  price={3499}
-  credits={150}
-  Effective_Cost_per_Credit={"₹23 / $0.26 per credit"}
-  Best_For={["CPOs","Developers & EPC firms"]}
-/> */}
 <PriceCard
   title="Starter Pack"
   basePriceINR={499}
@@ -116,7 +102,9 @@ export default function PricingPlans() {
 function PriceCard({ title, basePriceINR, credits, Best_For, recommended }) {
   const { currency, getCurrencySymbol, formatCurrency,convertAmount } = useCurrency();
   const { user } = useAuth0();
+    const { setUserState } = useUser();
   const { setWalletBalance } = useWallet();
+   const navigate = useNavigate();
   // Effective Price Per Credit (recomputed when currency or rates change)
 const effectivePerCredit = useMemo(() => {
   if (!basePriceINR || !credits) return 0;
@@ -139,100 +127,147 @@ const effectivePerCredit = useMemo(() => {
   // Convert INR → selected currency (USD/EUR/GBP/INR)
   const displayPrice = formatCurrency(basePriceINR, currency);
 
-  // Razorpay always uses INR
-  const razorpayAmountINR = basePriceINR;
+const TYPICAL_USAGE = {
+  "Basic Pack": "10 quick ROI calculations only",
+  "Starter Pack": "10 quick ROI calculations + 1–2 downloadable PDF reports",
+  "Pro Pack": "~20 full ROI reports OR ~50 quick ROI calculations",
+  "Business Pack": "100+ ROI calculations per month for teams & enterprises",
+};
 
-  const handlePayment = async ({ title, credits, priceINR }) => {
-    console.log("Clicked Data of card", { title, credits, priceINR });
 
-    try {
-      console.log("Charging INR amount:", razorpayAmountINR);
+const handlePayment = async ({ title, credits, priceINR }) => {
+  try {
+    const orderResponse = await fetch(
+      `${process.env.REACT_APP_BASE_URL}/api/v1/payment/order`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: priceINR,
+          plan: title,
+          credits,
+          currency: "INR",
+          receipt: `ROI_${title}_${Date.now()}`,
+          user_id: user.sub,
+        }),
+      }
+    );
 
-      const orderResponse = await fetch(
-        `${process.env.REACT_APP_BASE_URL}/api/v1/payment/order`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-        amount: priceINR,
-        plan: title,
-        credits,
-        currency: "INR",
-        receipt: `ROI_${title}_${Date.now()}`,
-        user_id: user.sub, // ✅ THIS FIXES EVERYTHING
-      }),
+    const order = await orderResponse.json();
+    console.log("Oder Response",order);
+    
+    const options = {
+      key: "rzp_test_RelPTZxFaBCsfD",
+      amount: priceINR * 100,
+      currency: "INR",
+      order_id: order.order.id,
+      name: "EV Charging ROI Calculator",
+      description: `${title}  ${credits} Credits`,
+
+      handler: async function (response) {
+        const verifyRes = await fetch(
+          `${process.env.REACT_APP_BASE_URL}/api/v1/payment/verify`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(response),
+          }
+        );
+
+        const data = await verifyRes.json();
+
+        if (data.success) {
+          // ✅ Update wallet
+          // setWalletBalance(data.updatedCredit);
+
+          // ✅ Unlock ROI session
+          const savedSession = localStorage.getItem("roi_session");
+          if (savedSession) {
+            const parsed = JSON.parse(savedSession);
+            localStorage.setItem(
+              "roi_session",
+              JSON.stringify({
+                ...parsed,
+                unlocked: true,
+              })
+            );
+          }
+
+          // ✅ Redirect AFTER payment success
+          // Waller balance Updated and ROI Unlocked Plan Updated....
+        console.log("Order API Response",order);
+        console.log("Order API Response Send",data?.updatedCredit);
+        
+          setUserState({
+        loading: false,
+        profile: {
+          subscriptionPlan: order?.order?.notes?.plan,
+          isSubscribed: true,
+          credit: data?.updatedCredit,
+        },
+      });
+      navigate("/", { replace: true });
+        } else {
+          alert("Payment verification failed");
         }
-      );
+      },
+    };
 
-      const order = await orderResponse.json();
+    const razor = new window.Razorpay(options);
+    razor.open();
 
-      const options = {
-        key: "rzp_test_RelPTZxFaBCsfD",
-        amount: razorpayAmountINR * 100,
-        currency: "INR",
-        order_id: order.order.id,
-        name: "EV Charging ROI Calculator",
-        description: `${title} – ${credits} Credits`,
-//         handler: async function (response) {
-//   await fetch(`${process.env.REACT_APP_BASE_URL}/api/v1/payment/verify`, {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify(response),
-//   });
-
-//   alert("Payment Successful!");
-//   // Update wallet balance in context
-//   setWalletBalance((prev) => prev + credits);
-// }
-
-handler: async function (response) {
-  const verifyRes = await fetch(
-    `${process.env.REACT_APP_BASE_URL}/api/v1/payment/verify`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(response),
-    }
-  );
-
-  const data = await verifyRes.json();
-
-  if (data.success) {
-    setWalletBalance(data.updatedCredit); // ✅ CORRECT
-    alert("Payment Successful!");
-  } else {
-    alert("Payment verification failed");
+  } catch (error) {
+    console.error(error);
   }
-}
-
-      };
-
-      const razor = new window.Razorpay(options);
-      razor.open();
-    } catch (error) {
-      console.error(error);
-    }
-  };
+};
 
   return (
-    <div className="rounded-xl p-6 shadow bg-white hover:shadow-lg transition">
+   <div className="rounded-2xl p-5 bg-white shadow-sm hover:shadow-lg transition-all border border-gray-100 flex flex-col">
       {/* Title */}
       <h3 className="text-xl font-bold">{title}</h3>
 
       {/* Converted Price */}
-      <div className="mt-4 text-4xl font-extrabold text-green-600">
+     <div className="mt-3 text-3xl font-extrabold text-green-600">
         {symbol} {displayPrice}
       </div>
 
-      {/* Credits */}
-      <p className="mt-2 text-sm font-semibold bg-green-100 px-3 py-1 rounded text-green-700">
-        {credits} Credits Included
+<div className="flex items-center ">
+    {/* Credits */}
+      <p className="inline-block mt-3 text-xs font-semibold bg-green-100 px-3 py-1 rounded-full text-green-700">
+        {credits} Credits
       </p>
 
       {/* Effective Cost Per Credit */}
-      <p className="text-xs mt-1 text-gray-600">
+      <p className="text-xs mt-3 ml-3 text-gray-600">
   Effective: {symbol}{effectivePerCredit} per credit
 </p>
+
+</div>
+
+{/* Premium Divider */}<div className="mt-4 h-px w-full bg-green-200" />
+ {/* Buy Button */}
+      <button
+        // onClick={(e)=>handlePayment(e)}
+        onClick={() =>
+  handlePayment({
+    title,
+    credits,
+    priceINR: basePriceINR,
+  })
+}
+
+       className="w-full flex justify-center items-center mt-5 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 shadow-md"
+      >
+       <span>
+          <BadgeCent
+                      size={26}
+                      className="mr-2 text-white"
+                    />
+        </span> 
+        <span className="text-lg font-mono">
+          Buy Credits
+          </span>
+      </button>
 
 
       {/* Best For */}
@@ -244,22 +279,29 @@ handler: async function (response) {
           </li>
         ))}
       </ul>
+{/* Typical Usage */}
+<div className="mt-3 flex items-start gap-2 text-sm text-gray-700 max-w-[90%]">
+  <span className="text-green-600">📊</span>
+  <p>
+    <span className="font-semibold text-gray-900">Typical usage:</span>{" "}
+    {TYPICAL_USAGE[title]}
+  </p>
+</div>
 
-      {/* Buy Button */}
-      <button
-        // onClick={(e)=>handlePayment(e)}
-        onClick={() =>
-  handlePayment({
-    title,
-    credits,
-    priceINR: basePriceINR,
-  })
-}
+{/* Premium Highlight */}
+<div className="mt-4 rounded-lg bg-green-50 px-3 py-2 max-w-[95%]">
+  <div className="flex items-start gap-3">
+    <span className="text-green-600 text-lg">⚡</span>
+   <p className="text-xs font-semibold text-green-900 leading-snug">
+      Unlimited full access to{" "}
+      <span className="font-bold">5-Year Profit Projections</span> and{" "}
+      <span className="font-bold">Key Insights & Recommendations</span>
+    </p>
+  </div>
+</div>
 
-        className="w-full mt-6 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700"
-      >
-        Buy Credits
-      </button>
+
+     
     </div>
   );
 }

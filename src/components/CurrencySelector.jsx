@@ -55,8 +55,9 @@ const { userState } = useUser();
 console.log("userState",userState);
 
 const credit = userState.profile?.credit;
-const plan = userState.profile?.subscriptionPlan;
+const plan = userState.profile?.subscriptionPlan ?? "Basic";
 const isSubscribed = userState.profile?.isSubscribed;
+const isHighestPlan = plan === "Business Pack";
 
 useEffect(() => {
   const registerUser = async () => {
@@ -289,14 +290,35 @@ console.log("CURRENT USER DATA FETCH",userData);
             className="flex items-center space-x-2 cursor-pointer"
             onClick={() => setMenuOpen((prev) => !prev)}
           >
-            <span className="bg-yellow-100 font-bold text-yellow-800 text-sm inline-flex items-center px-1.5 py-0.5 rounded-full dark:bg-yellow-900 dark:text-yellow-300">
+            {/* <span className="bg-yellow-100 font-bold text-yellow-800 text-sm inline-flex items-center px-1.5 py-0.5 rounded-full dark:bg-yellow-900 dark:text-yellow-300">
               <BadgeCent
                       size={16}
                       className="mr-2 text-yellow-800"
                     />
               {credit}
-            </span>
-           
+            </span> */}
+           {userState.loading ? (
+  // 🔹 Skeleton Loader
+  <span
+    className="
+      inline-flex items-center
+      px-4 py-1
+      rounded-full
+      bg-gray-200
+      animate-pulse
+    "
+  >
+    <span className="w-4 h-4 mr-2 rounded-full bg-gray-300" />
+    <span className="w-8 h-3 rounded bg-gray-300" />
+  </span>
+) : (
+  // 🔹 Actual Credit Badge
+  <span className="bg-yellow-100 font-bold text-yellow-800 text-sm inline-flex items-center px-1.5 py-0.5 rounded-full dark:bg-yellow-900 dark:text-yellow-300">
+    <BadgeCent size={16} className="mr-2 text-yellow-800" />
+    {credit}
+  </span>
+)}
+
          {user?.picture ? (
   <img
     src={user.picture}
@@ -336,16 +358,37 @@ console.log("CURRENT USER DATA FETCH",userData);
                 </div>
 
                 {/* 🔥 Upgrade Button */}
-                <div className="flex text-gray-700 items-center justify-around">
-                  <span className="flex items-center uppercase">{plan}</span>
-                  <button
-                    onClick={handleSubscribe}
-                    className="flex items-center justify-around gap-2 p-2 font-medium text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] transition-transform duration-200"
-                  >
-                    <Gem size={18} />
-                    Upgrade
-                  </button>
-                </div>
+<div className="flex items-center justify-between px-3 py-2 mt-1 rounded-lg bg-green-50 border border-green-200">
+  
+  {/* Plan info */}
+  <div className="flex flex-col">
+    <span className="text-[10px] font-semibold text-green-700 uppercase">
+      Current Plan
+    </span>
+    <span className="text-sm font-bold text-gray-800">
+     {plan ?? "Basic"}
+    </span>
+  </div>
+
+  {/* Upgrade button */}
+  <button
+    onClick={handleSubscribe}
+    className="
+      px-3 py-1.5 text-xs font-semibold text-white
+      rounded-md
+      bg-green-600
+      hover:bg-green-700
+      active:bg-green-800
+      transition-all duration-150
+      shadow-sm
+    "
+  >
+    Upgrade
+  </button>
+</div>
+
+
+
 
                 {/* 📊 My Saved Investment */}
                 <button
@@ -379,48 +422,57 @@ console.log("CURRENT USER DATA FETCH",userData);
       )}
  
  <div>
-<button
+{/* <button
   onClick={handleSubscribe}
-  className="
-    group relative overflow-hidden
-    px-6 py-2.5
-    text-sm font-semibold text-indigo-700
-    bg-white/70 backdrop-blur-md
-    border border-indigo-300
-    rounded-xl shadow
-    transition-all duration-300 ease-out
-    hover:-translate-y-0.5
-    hover:shadow-xl
-  "
+  className="text-white bg-gradient-to-r from-green-400 via-green-500 to-green-600 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800 shadow-lg shadow-green-500/50 dark:shadow-lg dark:shadow-green-800/80 font-medium rounded-base rounded-md text-sm px-4 py-2.5 text-center leading-5"
 >
-  {/* Animated gradient sweep */}
-  <span
-    className="
-      absolute inset-0
-      bg-gradient-to-r from-indigo-400/20 via-purple-400/30 to-pink-400/20
-      opacity-0
-      group-hover:opacity-100
-      transition-opacity duration-300
-    "
-  />
 
-  {/* Glow ring */}
-  <span
-    className="
-      pointer-events-none
-      absolute inset-0 rounded-xl
-      ring-2 ring-indigo-400/30
-      opacity-0
-      group-hover:opacity-100
-      transition-opacity duration-300
-    "
-  />
-
-  {/* Text */}
   <span className="relative z-10 tracking-wide">
     Upgrade
   </span>
+</button> */}
+<div
+  className="
+    flex items-center justify-between
+    px-4 py-3 mt-2
+    rounded-xl
+    border border-green-200
+    bg-gradient-to-r from-green-50 to-green-100
+    shadow-sm
+  "
+>
+  {/* Plan Info */}
+  <div className="flex flex-col gap-0.5 mr-2">
+    <span className="text-[10px] font-semibold tracking-wider text-green-700 uppercase">
+      Current Plan
+    </span>
+
+    <div className="flex items-center gap-2">
+      <span className="text-base font-bold text-gray-900">
+        {plan ?? "Basic"}
+      </span>
+
+    </div>
+  </div>
+
+  {/* Upgrade button */}
+ <button
+  onClick={handleSubscribe}
+  disabled={isHighestPlan}
+  className={`
+    px-4 py-2 text-xs font-semibold rounded-lg transition-all
+    ${
+      isHighestPlan
+        ? "bg-green-300 text-white cursor-not-allowed"
+        : "bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-md"
+    }
+  `}
+>
+  {isHighestPlan ? "Subscribed" : "Upgrade"}
 </button>
+
+</div>
+
  </div>
 
     

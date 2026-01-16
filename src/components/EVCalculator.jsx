@@ -28,10 +28,12 @@ import { useCurrency } from "../contexts/CurrencyContext";
 import { useWallet } from "@/contexts/WalletContext";
 import { useChargerType } from "@/contexts/ChargerTypeContext";
 import { useLocation } from "react-router-dom";
+import { useUser } from "@/contexts/userContext";
 
 const EVCalculator = () => {
   const location = useLocation();
   const project = location.state?.project;
+  const { setUserState } = useUser();
   const [costErrors, setCostErrors] = useState({});
   const [revenueErrors, setRevenueErrors] = useState({});
   const { chargerType } = useChargerType();
@@ -97,6 +99,30 @@ const EVCalculator = () => {
 
   const [results, setResults] = useState(null);
   const [totalInvestments, setTotalInvestment] = useState(null);
+  useEffect(() => {
+  const saved = sessionStorage.getItem("roi_session");
+  if (!saved) return;
+
+  try {
+    const { results, unlocked } = JSON.parse(saved);
+
+    // 🔁 Restore form inputs
+    setCostData(results.costData);
+    setRevenueData(results.revenueData);
+
+    // 🔁 Restore calculation
+    setResults(results);
+
+    // 🔁 Jump to Results tab
+    setActiveTab("results");
+
+    // 🔁 Restore unlock state
+    sessionStorage.setItem("roi_unlocked", unlocked ? "true" : "false");
+  } catch (e) {
+    console.error("Failed to restore ROI session", e);
+  }
+}, []);
+
   useEffect(() => {
     // Calculate results whenever data changes
     const calculation = getMockCalculation(costData, revenueData);
@@ -415,6 +441,35 @@ setRevenueErrors({});
     }
 
     console.log("Investment Saved:", data);
+
+    // 4️⃣ DEDUCT 1 CREDIT AFTER SUCCESSFUL SAVE
+const deductResponse = await fetch(
+  `${process.env.REACT_APP_BASE_URL}/api/v1/user/deduct`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      user_id: user?.sub, // auth0 user id
+      amount: 1,          // deduct 1 credit
+    }),
+  }
+);
+
+const deductData = await deductResponse.json();
+
+if (!deductResponse.ok) {
+  throw new Error(deductData.message || "Credit deduction failed");
+}
+setUserState({
+        loading: false,
+        profile: {
+          credit: deductData.remainingCredit || 0,
+        },
+      });
+console.log("✅ Credit Deducted Successfully:", deductData);
+
 
   } catch (error) {
     console.error("Error saving investment:", error);

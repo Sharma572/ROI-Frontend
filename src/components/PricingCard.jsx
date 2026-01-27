@@ -280,6 +280,7 @@ const handlePayment = async ({ title, credits, priceINR }) => {
         ))}
       </ul>
 {/* Typical Usage */}
+
 <div className="mt-3 flex items-start gap-2 text-sm text-gray-700 max-w-[90%]">
   <span className="text-green-600">📊</span>
   <p>
@@ -288,8 +289,8 @@ const handlePayment = async ({ title, credits, priceINR }) => {
   </p>
 </div>
 
-{/* Premium Highlight */}
-<div className="mt-4 rounded-lg bg-green-50 px-3 py-2 max-w-[95%]">
+{
+  title != "Basic Pack" ? (<div className="mt-4 rounded-lg bg-green-50 px-3 py-2 max-w-[95%]">
   <div className="flex items-start gap-3">
     <span className="text-green-600 text-lg">⚡</span>
    <p className="text-xs font-semibold text-green-900 leading-snug">
@@ -298,7 +299,9 @@ const handlePayment = async ({ title, credits, priceINR }) => {
       <span className="font-bold">Key Insights & Recommendations</span>
     </p>
   </div>
-</div>
+</div>) : ("")
+}
+
 
 
      

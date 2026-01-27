@@ -33,7 +33,8 @@ import { useUser } from "@/contexts/userContext";
 const EVCalculator = () => {
   const location = useLocation();
   const project = location.state?.project;
-  const { setUserState } = useUser();
+  const { userState,setUserState } = useUser();
+   
   const [costErrors, setCostErrors] = useState({});
   const [revenueErrors, setRevenueErrors] = useState({});
   const { chargerType } = useChargerType();
@@ -344,20 +345,158 @@ const validateRevenue = () => {
 };
 
 
-  const handleShowResultClick = async () => {
-  try {
-      setIsLoading(true);
+//   const handleShowResultClick = async () => {
+//   try {
+//       setIsLoading(true);
 
-       if (!validateRevenue()) {
+//        if (!validateRevenue()) {
+//       setIsLoading(false);
+//       return;
+//     }
+
+// // ✅ Clear old errors
+// setRevenueErrors({});
+
+    
+//     // Generate unique project name based on date-time
+//     const now = new Date();
+//     const autoProjectName =
+//       "Project-" +
+//       now.getFullYear() +
+//       "-" +
+//       String(now.getMonth() + 1).padStart(2, "0") +
+//       "-" +
+//       String(now.getDate()).padStart(2, "0") +
+//       "-" +
+//       String(now.getHours()).padStart(2, "0") +
+//       String(now.getMinutes()).padStart(2, "0") +
+//       String(now.getSeconds()).padStart(2, "0")
+//     // 1️⃣ Run calculation
+//     const calculation = getMockCalculation(costData, revenueData);
+//     setResults(calculation);
+//     setActiveTab("results");
+
+//     // 2️⃣ Structure payload for backend
+//     const payload = {
+//       currentUser: {
+//         sub: user?.sub,      // from auth0 or session
+//         email: user?.email,
+//         email_verified: true,
+//         name: user?.name,
+//         picture: user?.picture,
+//       },
+
+//       // PROJECT INFO
+//       project_name: autoProjectName,
+
+//       // MAIN CALC METRICS
+//       roi: calculation.roi.toFixed(2) + "%",
+//       payback_period_years: calculation.paybackPeriod,
+//       total_investment: calculation.totalInvestment,
+//       five_year_profit: calculation.fiveYearProfit,
+
+//       // ANNUAL FINANCIAL SUMMARY
+//       annual_financial_summary: {
+//         revenue: calculation.annualRevenue,
+//         costs: calculation.annualCosts,
+//         profit: calculation.annualProfit,
+//       },
+
+//       // BREAKDOWN
+//       investment_breakdown: {
+//         equipment_costs: calculation.costBreakdown.equipment,
+//         installation_costs: calculation.costBreakdown.installation,
+//       },
+
+//       // PROFIT PROJECTIONS (YEAR-WISE)
+//       profit_projections: calculation.yearlyProfits.map((item) => ({
+//         year: item.year,
+//         revenue: item.revenue,
+//         costs: item.costs,
+//         profit: item.profit,
+//       })),
+
+//       // SAVE ALL USER RAW INPUTS
+//       userInputCost: costData,
+//       userInputRevenue: revenueData,
+//     };
+
+//     console.log("🚀 Final Payload Sent To Backend:", payload);
+
+//     // 3️⃣ SEND TO BACKEND
+//     const response = await fetch(
+//       `${process.env.REACT_APP_BASE_URL}/api/v1/investments/createinvestment`,
+//       {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(payload),
+//       }
+//     );
+
+//     const data = await response.json();
+
+//     if (!response.ok) {
+//       throw new Error(data.message || "Failed to save investment");
+//     }
+
+//     console.log("Investment Saved:", data);
+
+//     // 4️⃣ DEDUCT 1 CREDIT AFTER SUCCESSFUL SAVE
+// const deductResponse = await fetch(
+//   `${process.env.REACT_APP_BASE_URL}/api/v1/user/deduct`,
+//   {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({
+//       user_id: user?.sub, // auth0 user id
+//       amount: 1,          // deduct 1 credit
+//     }),
+//   }
+// );
+
+// const deductData = await deductResponse.json();
+
+// if (!deductResponse.ok) {
+//   throw new Error(deductData.message || "Credit deduction failed");
+// }
+// console.log("User state Data before set",userState);
+
+// setUserState((prev) => ({
+//   ...prev,
+//   loading: false,
+//   profile: {
+//     ...prev.profile, // ✅ keep ALL existing fields
+//     credit: deductData.remainingCredit ?? prev.profile.credit,
+//   },
+// }));
+
+// console.log("✅ Credit Deducted Successfully:", deductData);
+
+
+//   } catch (error) {
+//     console.error("Error saving investment:", error);
+//     alert("Something went wrong while saving investment.");
+//   }finally{
+//       setIsLoading(false);
+//   }
+// };
+
+const handleShowResultClick = async () => {
+  try {
+    setIsLoading(true);
+
+    if (!validateRevenue()) {
       setIsLoading(false);
       return;
     }
 
-// ✅ Clear old errors
-setRevenueErrors({});
+    setRevenueErrors({});
 
-    
-    // Generate unique project name based on date-time
+    // 1️⃣ Generate project name
     const now = new Date();
     const autoProjectName =
       "Project-" +
@@ -369,45 +508,41 @@ setRevenueErrors({});
       "-" +
       String(now.getHours()).padStart(2, "0") +
       String(now.getMinutes()).padStart(2, "0") +
-      String(now.getSeconds()).padStart(2, "0")
-    // 1️⃣ Run calculation
+      String(now.getSeconds()).padStart(2, "0");
+
+    // 2️⃣ Run calculation
     const calculation = getMockCalculation(costData, revenueData);
     setResults(calculation);
     setActiveTab("results");
 
-    // 2️⃣ Structure payload for backend
+    // 3️⃣ Prepare payload
     const payload = {
       currentUser: {
-        sub: user?.sub,      // from auth0 or session
+        sub: user?.sub,
         email: user?.email,
         email_verified: true,
         name: user?.name,
         picture: user?.picture,
       },
 
-      // PROJECT INFO
       project_name: autoProjectName,
 
-      // MAIN CALC METRICS
       roi: calculation.roi.toFixed(2) + "%",
       payback_period_years: calculation.paybackPeriod,
       total_investment: calculation.totalInvestment,
       five_year_profit: calculation.fiveYearProfit,
 
-      // ANNUAL FINANCIAL SUMMARY
       annual_financial_summary: {
         revenue: calculation.annualRevenue,
         costs: calculation.annualCosts,
         profit: calculation.annualProfit,
       },
 
-      // BREAKDOWN
       investment_breakdown: {
         equipment_costs: calculation.costBreakdown.equipment,
         installation_costs: calculation.costBreakdown.installation,
       },
 
-      // PROFIT PROJECTIONS (YEAR-WISE)
       profit_projections: calculation.yearlyProfits.map((item) => ({
         year: item.year,
         revenue: item.revenue,
@@ -415,67 +550,61 @@ setRevenueErrors({});
         profit: item.profit,
       })),
 
-      // SAVE ALL USER RAW INPUTS
       userInputCost: costData,
       userInputRevenue: revenueData,
     };
 
-    console.log("🚀 Final Payload Sent To Backend:", payload);
-
-    // 3️⃣ SEND TO BACKEND
+    // 4️⃣ Save investment
     const response = await fetch(
       `${process.env.REACT_APP_BASE_URL}/api/v1/investments/createinvestment`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       }
     );
 
     const data = await response.json();
-
     if (!response.ok) {
       throw new Error(data.message || "Failed to save investment");
     }
 
-    console.log("Investment Saved:", data);
+    console.log("✅ Investment saved");
 
-    // 4️⃣ DEDUCT 1 CREDIT AFTER SUCCESSFUL SAVE
-const deductResponse = await fetch(
-  `${process.env.REACT_APP_BASE_URL}/api/v1/user/deduct`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      user_id: user?.sub, // auth0 user id
-      amount: 1,          // deduct 1 credit
-    }),
-  }
-);
+    // 5️⃣ 🔥 ALWAYS deduct 1 credit (ALL USERS)
+    const deductResponse = await fetch(
+      `${process.env.REACT_APP_BASE_URL}/api/v1/user/deduct`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: user?.sub,
+          amount: 1, // ✅ mandatory save cost
+        }),
+      }
+    );
 
-const deductData = await deductResponse.json();
+    const deductData = await deductResponse.json();
+    if (!deductResponse.ok) {
+      throw new Error(deductData.message || "Credit deduction failed");
+    }
 
-if (!deductResponse.ok) {
-  throw new Error(deductData.message || "Credit deduction failed");
-}
-setUserState({
-        loading: false,
-        profile: {
-          credit: deductData.remainingCredit || 0,
-        },
-      });
-console.log("✅ Credit Deducted Successfully:", deductData);
+    // 6️⃣ Update global user state
+    setUserState((prev) => ({
+      ...prev,
+      profile: {
+        ...prev.profile,
+        credit: deductData.remainingCredit,
+      },
+    }));
 
+    console.log("💳 1 credit deducted for saving investment");
 
   } catch (error) {
-    console.error("Error saving investment:", error);
-    alert("Something went wrong while saving investment.");
-  }finally{
-      setIsLoading(false);
+    console.error("❌ Error saving investment:", error);
+    alert(error.message || "Something went wrong while saving investment.");
+  } finally {
+    setIsLoading(false);
   }
 };
 
@@ -588,7 +717,7 @@ console.log("✅ Credit Deducted Successfully:", deductData);
         </div>
         )}
         
-        <div className="grid lg:grid-cols-3 gap-8 border-[1px] border-slate-200 p-6 rounded-lg shadow-sm bg-white">
+        <div className="grid lg:grid-cols-3 gap-2 border-[1px] border-slate-200 p-3 pt-6 rounded-lg shadow-sm bg-white">
           <div className="lg:col-span-2">
             <Tabs
               value={activeTab}

@@ -32,6 +32,7 @@ const CurrencySelector = () => {
   const [hasRegistered, setHasRegistered] = useState(false);
   const { user, logout,loginWithRedirect, loginWithPopup, isAuthenticated } = useAuth0();
   console.log("Auth0 User Data in Currency Selector:", user);
+
   const [profilePic, setProfilePic] = useState("");
   const [userData,setUserData]=useState({});
   const [currentUser, setCurrentUser] = useState([]);
@@ -52,92 +53,94 @@ console.log("User Register Details",user);
 
 const { setUserState } = useUser();
 const { userState } = useUser();
-console.log("userState",userState);
+console.log("UserState Data in Currency",userState);
 
 const credit = userState.profile?.credit;
-const plan = userState.profile?.subscriptionPlan ?? "Basic";
+const plan = userState?.profile?.subscriptionPlan;
 const isSubscribed = userState.profile?.isSubscribed;
 const isHighestPlan = plan === "Business Pack";
 
-useEffect(() => {
-  const registerUser = async () => {
-    if (isAuthenticated && user && !hasRegistered) {
-      try {
-        const res = await fetch(
-          `${process.env.REACT_APP_BASE_URL}/api/v1/user/getuser/${encodeURIComponent(
-            user.sub
-          )}`
-        );
+// useEffect(() => {
+//   const registerUser = async () => {
+//     if (isAuthenticated && user && !hasRegistered) {
+//       try {
+//         const res = await fetch(
+//           `${process.env.REACT_APP_BASE_URL}/api/v1/user/getuser/${encodeURIComponent(
+//             user.sub
+//           )}`
+//         );
 
-        if (res.ok) {
-          const data = await res.json();
+//         if (res.ok) {
+//           const data = await res.json();
+//           console.log("Existing user data fetched:", data);
+//           // ✅ SAVE EVERYTHING IN ONE OBJECT
+//           setUserState({
+//             ...userState,
+//             loading: false,
+//             profile: data.user,
+//           });
 
-          // ✅ SAVE EVERYTHING IN ONE OBJECT
-          setUserState({
-            loading: false,
-            profile: data.user,
-          });
+//           setHasRegistered(true);
 
-          setHasRegistered(true);
+//           if (!data.user.mobile || !data.user.companyName) {
+//             setShowProfileModal(true);
+//           }
 
-          if (!data.user.mobile || !data.user.companyName) {
-            setShowProfileModal(true);
-          }
+//           return;
+//         }
 
-          return;
-        }
+//         // 🔹 Register new user (first-time)
+//         await fetch(
+//           `${process.env.REACT_APP_BASE_URL}/api/v1/user/register-user`,
+//           {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json" },
+//             body: JSON.stringify({
+//               user_id: user.sub,
+//               email: user.email,
+//               email_verified: user.email_verified,
+//               name: user.name,
+//               profile_pic: user.picture,
+//             }),
+//           }
+//         );
 
-        // 🔹 Register new user (first-time)
-        await fetch(
-          `${process.env.REACT_APP_BASE_URL}/api/v1/user/register-user`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              user_id: user.sub,
-              email: user.email,
-              email_verified: user.email_verified,
-              name: user.name,
-              profile_pic: user.picture,
-            }),
-          }
-        );
-
-         // 3️⃣ Fetch wallet credit for new user
-         console.log("User Auth0 id",user?.sub);
+//          // 3️⃣ Fetch wallet credit for new user
+//          console.log("User Auth0 id",user?.sub);
          
-      const creditRes = await fetch(
-        `${process.env.REACT_APP_BASE_URL}/api/v1/user/credit/${encodeURIComponent(
-          user.sub
-        )}`
-      );
+//       const creditRes = await fetch(
+//         `${process.env.REACT_APP_BASE_URL}/api/v1/user/credit/${encodeURIComponent(
+//           user.sub
+//         )}`
+//       );
 
-      const creditData = await creditRes.json();
+//       const creditData = await creditRes.json();
 
-      // 4️⃣ Save everything in ONE object
-      setUserState({
-        loading: false,
-        profile: {
-          user_id: user.sub,
-          email: user.email,
-          name: user.name,
-          profile_pic: user.picture,
-          credit: creditData.credit || 0,
-          isSubscribed: false,
-        },
-      });
+//       // 4️⃣ Save everything in ONE object
+//       setUserState({
+//         loading: false,
+//         profile: {
+//           user_id: user.sub,
+//           email: user.email,
+//           name: user.name,
+//           profile_pic: user.picture,
+//           credit: creditData.credit || 0,
+//           subscriptionPlan: "BASIC",
+//           isSubscribed: false,
+//         },
+//       });
 
-        setHasRegistered(true);
-        setShowProfileModal(true);
-      } catch (err) {
-        console.error("Error registering user:", err);
-      }
-    }
-  };
+//         setHasRegistered(true);
+//         setShowProfileModal(true);
+//       } catch (err) {
+//         console.error("Error registering user:", err);
+//       }
+//     }
+//   };
 
-  registerUser();
+//   registerUser();
 
-}, [isAuthenticated, user, hasRegistered]);
+// }, [isAuthenticated, user, hasRegistered]);
 
 
   // useEffect(() => {
@@ -205,6 +208,103 @@ useEffect(() => {
 
   //   registerUser();
   // }, [isAuthenticated, user, hasRegistered, setWalletBalance]);
+
+
+  // New Logic 
+  useEffect(() => {
+  const registerUser = async () => {
+    if (!isAuthenticated || !user || hasRegistered) return;
+
+    try {
+      /* ----------------------------------
+         1️⃣ Check if user exists
+      ---------------------------------- */
+      const userRes = await fetch(
+        `${process.env.REACT_APP_BASE_URL}/api/v1/user/getuser/${encodeURIComponent(
+          user.sub
+        )}`
+      );
+
+      let userProfile = null;
+
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        userProfile = userData.user;
+      } else {
+        /* ----------------------------------
+           2️⃣ Register new user
+        ---------------------------------- */
+        await fetch(
+          `${process.env.REACT_APP_BASE_URL}/api/v1/user/register-user`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: user.sub,
+              email: user.email,
+              email_verified: user.email_verified,
+              name: user.name,
+              profile_pic: user.picture,
+            }),
+          }
+        );
+
+        // Fetch newly created user
+        const newUserRes = await fetch(
+          `${process.env.REACT_APP_BASE_URL}/api/v1/user/getuser/${encodeURIComponent(
+            user.sub
+          )}`
+        );
+
+        const newUserData = await newUserRes.json();
+        userProfile = newUserData.user;
+        setShowProfileModal(true);
+      }
+
+      /* ----------------------------------
+         3️⃣ Fetch ACCESS & PERMISSIONS
+      ---------------------------------- */
+      const accessRes = await fetch(
+        `${process.env.REACT_APP_BASE_URL}/api/v1/user/get-user-access/${encodeURIComponent(
+          user.sub
+        )}`
+      );
+
+      if (!accessRes.ok) {
+        throw new Error("Failed to fetch user access");
+      }
+
+      const accessData = await accessRes.json();
+
+      /* ----------------------------------
+         4️⃣ SET GLOBAL USER STATE (FINAL)
+      ---------------------------------- */
+      setUserState({
+        loading: false,
+        profile: {
+          ...userProfile,
+          credit: accessData.credit,
+          subscriptionPlan: accessData.subscriptionPlan,
+        },
+        permissions: accessData.permissions,
+      });
+
+      setHasRegistered(true);
+
+      /* ----------------------------------
+         5️⃣ Profile completeness check
+      ---------------------------------- */
+      if (!userProfile.mobile || !userProfile.companyName) {
+        setShowProfileModal(true);
+      }
+    } catch (error) {
+      console.error("❌ User initialization failed:", error);
+    }
+  };
+
+  registerUser();
+}, [isAuthenticated, user, hasRegistered]);
+
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -357,7 +457,8 @@ console.log("CURRENT USER DATA FETCH",userData);
                   </span>
                 </div>
 
-                {/* 🔥 Upgrade Button */}
+
+
 <div className="flex items-center justify-between px-3 py-2 mt-1 rounded-lg bg-green-50 border border-green-200">
   
   {/* Plan info */}
@@ -366,7 +467,7 @@ console.log("CURRENT USER DATA FETCH",userData);
       Current Plan
     </span>
     <span className="text-sm font-bold text-gray-800">
-     {plan ?? "Basic"}
+     {plan}
     </span>
   </div>
 
@@ -386,6 +487,8 @@ console.log("CURRENT USER DATA FETCH",userData);
     Upgrade
   </button>
 </div>
+         
+
 
 
 
@@ -431,6 +534,8 @@ console.log("CURRENT USER DATA FETCH",userData);
     Upgrade
   </span>
 </button> */}
+{
+  isAuthenticated && user && (
 <div
   className="
     flex items-center justify-between
@@ -449,7 +554,7 @@ console.log("CURRENT USER DATA FETCH",userData);
 
     <div className="flex items-center gap-2">
       <span className="text-base font-bold text-gray-900">
-        {plan ?? "Basic"}
+        {plan}
       </span>
 
     </div>
@@ -472,6 +577,9 @@ console.log("CURRENT USER DATA FETCH",userData);
 </button>
 
 </div>
+  )
+}
+
 
  </div>
 

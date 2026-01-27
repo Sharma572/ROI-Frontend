@@ -6,6 +6,7 @@ export const UserProvider = ({ children }) => {
   const [userState, setUserState] = useState({
     loading: true,
     profile: null,
+     permissions: null,
   });
 
   return (
